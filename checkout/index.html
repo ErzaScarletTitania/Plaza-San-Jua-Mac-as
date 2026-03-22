@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Checkout | Plaza San Juan Macías</title>
+    <link rel="stylesheet" href="../styles/main.css" />
+  </head>
+  <body>
+    <header class="main-header">
+      <div class="shell main-header__inner">
+        <a class="brand-block" href="../">
+          <strong data-brand>Plaza San Juan Macías</strong>
+          <span class="muted">Confirmación manual de pedidos</span>
+        </a>
+        <nav class="header-actions">
+          <a class="header-chip" href="../catalogo/">Catálogo</a>
+          <a class="header-chip" data-account-link href="../cuenta/">
+            <span data-session-chip>Mi cuenta</span>
+          </a>
+          <a class="header-chip" href="../">Inicio</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section">
+      <div class="shell checkout-layout">
+        <section class="checkout-card">
+          <p class="eyebrow">Resumen</p>
+          <h2>Tu pedido</h2>
+          <ul class="checkout-list" data-checkout-items></ul>
+          <div class="price-block price-block--large">
+            <strong data-checkout-total>S/ 0.00</strong>
+          </div>
+        </section>
+
+        <section class="checkout-card">
+          <p class="eyebrow">Datos del cliente</p>
+          <h2>Completa el pedido</h2>
+          <form class="form-grid" data-order-form>
+            <input type="text" name="fullName" placeholder="Nombre completo" required />
+            <input type="email" name="email" placeholder="Correo de contacto" />
+            <input type="tel" name="phone" placeholder="Celular o WhatsApp" required />
+            <input type="text" name="district" placeholder="Distrito de entrega" required />
+            <input type="text" name="addressLine1" placeholder="Dirección principal" required />
+            <input type="text" name="addressLine2" placeholder="Interior, departamento o zona" />
+            <input type="text" name="reference" placeholder="Referencia para la entrega" />
+            <select name="paymentMethod" required>
+              <option value="">Selecciona el método de pago</option>
+              <option value="yape">Yape</option>
+              <option value="bcp">BCP</option>
+              <option value="paypal">PayPal</option>
+              <option value="binance">Binance USDT BEP20</option>
+            </select>
+            <textarea
+              name="notes"
+              rows="4"
+              placeholder="Horario, pedido adicional o instrucciones"
+            ></textarea>
+            <button class="button" type="submit">Registrar pedido</button>
+          </form>
+          <p class="status" data-order-status></p>
+        </section>
+      </div>
+
+      <div class="shell section">
+        <div class="payment-grid">
+          <article class="payment-card">
+            <strong>Yape</strong>
+            <p>Número: <span data-yape-number></span></p>
+            <img src="../assets/payment/yape-qr.svg" alt="QR Yape Plaza San Juan Macías" />
+          </article>
+          <article class="payment-card">
+            <strong>BCP</strong>
+            <p>Cuenta: <span data-bcp-account></span></p>
+            <p class="muted">Transferencia manual y envío de comprobante.</p>
+          </article>
+          <article class="payment-card">
+            <strong>PayPal</strong>
+            <p>Pago manual a <span data-paypal-email></span></p>
+            <p class="muted">Enviar el comprobante con el número de pedido.</p>
+          </article>
+          <article class="payment-card">
+            <strong>Binance USDT BEP20</strong>
+            <p class="muted" data-binance-wallet></p>
+          </article>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="../scripts/app.js"></script>
+  </body>
+</html>

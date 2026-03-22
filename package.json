@@ -1,0 +1,32 @@
+{
+  "name": "plaza-san-juan-macias",
+  "version": "1.0.0",
+  "description": "Plaza San Juan Macías website",
+  "scripts": {
+    "fetch:reference": "node scripts/fetch-reference-products.mjs",
+    "fetch:catalog": "node scripts/fetch-category-listings.mjs",
+    "build": "node scripts/build-catalog.mjs && node scripts/generate-yape-qr.mjs",
+    "prepare:deploy": "node scripts/prepare-deploy.mjs",
+    "test": "vitest run --pool=threads --maxWorkers=1",
+    "verify": "npm run test && npm run prepare:deploy"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ErzaScarletTitania/Plaza-San-Jua-Mac-as.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/ErzaScarletTitania/Plaza-San-Jua-Mac-as/issues"
+  },
+  "homepage": "https://github.com/ErzaScarletTitania/Plaza-San-Jua-Mac-as#readme",
+  "dependencies": {
+    "qrcode": "^1.5.4"
+  },
+  "devDependencies": {
+    "jsdom": "^29.0.1",
+    "vitest": "^4.1.0"
+  }
+}

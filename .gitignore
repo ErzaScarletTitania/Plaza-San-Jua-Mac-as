@@ -1,0 +1,8 @@
+node_modules/
+deploy/
+reference/products/
+reference/*.html
+reference/category-pages/
+sample-product.html
+storage/orders/*.json
+storage/users/users.json

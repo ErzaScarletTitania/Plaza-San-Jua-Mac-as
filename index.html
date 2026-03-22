@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Plaza San Juan Macías</title>
+    <meta
+      name="description"
+      content="Plaza San Juan Macías: supermercado y tienda online con catálogo amplio, cuenta de usuario y pagos por Yape, BCP, Binance y PayPal."
+    />
+    <link rel="stylesheet" href="./styles/main.css" />
+  </head>
+  <body>
+    <div class="utility-bar">
+      <div class="shell utility-bar__inner">
+        <span>Despacho y confirmación manual de pedidos en español.</span>
+        <span>Pagos habilitados: Yape, BCP, Binance y PayPal.</span>
+      </div>
+    </div>
+
+    <header class="main-header">
+      <div class="shell main-header__inner">
+        <a class="brand-block" href="./">
+          <strong data-brand>Plaza San Juan Macías</strong>
+          <span class="muted">Compra diaria, hogar y cuidado personal</span>
+        </a>
+        <form class="search-card" action="./catalogo/" method="get">
+          <input type="search" name="q" placeholder="Busca productos, marcas o categorías" />
+          <button class="button" type="submit">Buscar</button>
+        </form>
+        <nav class="header-actions">
+          <a class="header-chip" href="./catalogo/">Catálogo</a>
+          <a class="header-chip" data-account-link href="./cuenta/">
+            <span data-session-chip>Mi cuenta</span>
+          </a>
+          <a class="header-chip" href="./checkout/">
+            Carrito <span data-cart-count>0</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <section class="mega-menu">
+      <div class="shell menu-grid" data-menu-groups></div>
+    </section>
+
+    <main>
+      <section class="hero-section">
+        <div class="shell hero-grid" data-hero></div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Categorías principales</p>
+              <h2>Estructura clara para comprar rápido.</h2>
+            </div>
+            <p>
+              El sitio replica una navegación amplia de supermercado, enfocada en
+              despensa, hogar, cuidado personal y productos cotidianos.
+            </p>
+          </div>
+          <div class="highlight-grid" data-category-highlights></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell promo-grid">
+          <article class="promo-card">
+            <p class="eyebrow">Cuenta y dirección</p>
+            <h2>Registro listo para el siguiente pedido.</h2>
+            <p>
+              Cada cliente puede registrarse, guardar su dirección y dejar lista la
+              información básica de entrega.
+            </p>
+            <a class="button" href="./cuenta/">Ingresar o crear cuenta</a>
+          </article>
+          <article class="promo-card">
+            <p class="eyebrow">Checkout manual</p>
+            <h2>Flujo simple para operar hoy.</h2>
+            <p>
+              El pedido se registra, el cliente elige un medio de pago permitido y
+              luego envía el comprobante para validación.
+            </p>
+            <a class="button button--ghost" href="./checkout/">Ir al checkout</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow">Productos destacados</p>
+              <h2>Selección ampliada con precios ajustados.</h2>
+            </div>
+            <a class="button button--ghost" href="./catalogo/">Ver todos</a>
+          </div>
+          <div class="product-grid" data-featured-products></div>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell stats-grid">
+          <article class="stat-card">
+            <p class="eyebrow">Compra asistida</p>
+            <h3>Pagos controlados manualmente.</h3>
+            <p class="muted">Ideal para el arranque operativo sin integraciones complejas.</p>
+          </article>
+          <article class="stat-card">
+            <p class="eyebrow">Precios</p>
+            <h3>Catálogo con incremento base de 10%.</h3>
+            <p class="muted">Redondeado automáticamente a 2 decimales.</p>
+          </article>
+          <article class="stat-card">
+            <p class="eyebrow">Mi perfil</p>
+            <h3>Dirección y datos guardados.</h3>
+            <p class="muted">Preparado para la futura administración del negocio.</p>
+          </article>
+          <article class="stat-card">
+            <p class="eyebrow">Hosting</p>
+            <h3>Static-first para InfinityFree.</h3>
+            <p class="muted">Más simple de desplegar y mantener.</p>
+          </article>
+        </div>
+      </section>
+
+      <section class="section">
+        <div class="shell info-strip">
+          <article class="info-card">
+            <strong>Yape</strong>
+            <p class="muted">Número: <span data-yape-number></span></p>
+          </article>
+          <article class="info-card">
+            <strong>BCP</strong>
+            <p class="muted">Cuenta: <span data-bcp-account></span></p>
+          </article>
+          <article class="info-card">
+            <strong>PayPal</strong>
+            <p class="muted">Manual a <span data-paypal-email></span></p>
+          </article>
+          <article class="info-card">
+            <strong>Binance USDT</strong>
+            <p class="muted">BEP20 manual</p>
+          </article>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <div class="shell footer-grid">
+        <div>
+          <strong data-brand>Plaza San Juan Macías</strong>
+          <p class="muted">
+            Tienda online en español con foco en compras diarias, hogar y cuidado
+            personal.
+          </p>
+        </div>
+        <div>
+          <strong>Navegación</strong>
+          <p><a href="./catalogo/">Catálogo</a></p>
+          <p><a href="./cuenta/">Mi cuenta</a></p>
+          <p><a href="./checkout/">Checkout</a></p>
+        </div>
+        <div>
+          <strong>Pagos</strong>
+          <p>Yape</p>
+          <p>BCP</p>
+          <p>Binance</p>
+          <p>PayPal</p>
+        </div>
+        <div>
+          <strong>Contacto</strong>
+          <p><a href="mailto:liliet.polanco.peru@gmail.com">Correo</a></p>
+          <p><a href="https://wa.me/51944537419">WhatsApp</a></p>
+        </div>
+      </div>
+    </footer>
+
+    <script type="module" src="./scripts/app.js"></script>
+  </body>
+</html>

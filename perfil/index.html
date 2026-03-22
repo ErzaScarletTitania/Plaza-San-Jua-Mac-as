@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi perfil | Plaza San Juan Macías</title>
+    <link rel="stylesheet" href="../styles/main.css" />
+  </head>
+  <body>
+    <header class="main-header">
+      <div class="shell main-header__inner">
+        <a class="brand-block" href="../">
+          <strong data-brand>Plaza San Juan Macías</strong>
+          <span class="muted">Datos generales del cliente</span>
+        </a>
+        <nav class="header-actions">
+          <a class="header-chip" href="../catalogo/">Catálogo</a>
+          <a class="header-chip" href="../checkout/">Checkout</a>
+          <button class="header-chip" type="button" data-logout>Cerrar sesión</button>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section">
+      <div class="shell profile-layout">
+        <section class="auth-card">
+          <p class="eyebrow">Mi perfil</p>
+          <h1>Información general</h1>
+          <form class="form-grid" data-profile-form>
+            <input type="text" name="fullName" placeholder="Nombre completo" required />
+            <input type="email" name="email" placeholder="Correo" readonly />
+            <input type="tel" name="phone" placeholder="Celular o WhatsApp" required />
+            <input type="text" name="district" placeholder="Distrito" required />
+            <input type="text" name="addressLine1" placeholder="Dirección principal" required />
+            <input
+              type="text"
+              name="addressLine2"
+              placeholder="Interior, lote, departamento o zona"
+            />
+            <textarea
+              name="reference"
+              rows="4"
+              placeholder="Referencia para la entrega"
+            ></textarea>
+            <button class="button" type="submit">Guardar datos</button>
+          </form>
+          <p class="status" data-profile-status></p>
+        </section>
+
+        <aside class="summary-card">
+          <p class="eyebrow">Entrega</p>
+          <h2>Resumen guardado</h2>
+          <p class="muted" data-profile-summary>
+            Completa tu información para dejar lista la dirección de entrega.
+          </p>
+          <a class="button button--ghost" href="../checkout/">Usar en checkout</a>
+        </aside>
+      </div>
+    </main>
+
+    <script type="module" src="../scripts/app.js"></script>
+  </body>
+</html>

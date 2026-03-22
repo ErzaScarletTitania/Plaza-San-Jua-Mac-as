@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mi cuenta | Plaza San Juan Macías</title>
+    <link rel="stylesheet" href="../styles/main.css" />
+  </head>
+  <body>
+    <header class="main-header">
+      <div class="shell main-header__inner">
+        <a class="brand-block" href="../">
+          <strong data-brand>Plaza San Juan Macías</strong>
+          <span class="muted">Ingreso y registro de clientes</span>
+        </a>
+        <nav class="header-actions">
+          <a class="header-chip" href="../catalogo/">Catálogo</a>
+          <a class="header-chip" href="../checkout/">Checkout</a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section">
+      <div class="shell">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Mi cuenta</p>
+            <h1>Ingresa o crea tu usuario.</h1>
+          </div>
+          <p>Guarda tus datos y deja lista la dirección de entrega para futuras compras.</p>
+        </div>
+
+        <div class="account-layout">
+          <section class="auth-card">
+            <p class="eyebrow">Ingreso</p>
+            <h2>Ya tengo cuenta</h2>
+            <form class="form-grid" data-login-form>
+              <input type="email" name="email" placeholder="Correo" required />
+              <input type="password" name="password" placeholder="Contraseña" required />
+              <button class="button" type="submit">Ingresar</button>
+            </form>
+          </section>
+
+          <section class="auth-card">
+            <p class="eyebrow">Registro</p>
+            <h2>Crear cuenta</h2>
+            <form class="form-grid" data-register-form>
+              <input type="text" name="fullName" placeholder="Nombre completo" required />
+              <input type="email" name="email" placeholder="Correo" required />
+              <input type="password" name="password" placeholder="Contraseña" required />
+              <input
+                type="password"
+                name="confirmPassword"
+                placeholder="Confirmar contraseña"
+                required
+              />
+              <button class="button" type="submit">Crear cuenta</button>
+            </form>
+          </section>
+        </div>
+
+        <section class="auth-card section auth-card--wide">
+          <p class="eyebrow">Integraciones sociales</p>
+          <h2>Google y Facebook</h2>
+          <div class="social-grid">
+            <button class="button button--ghost" type="button" data-social-provider="google">
+              Continuar con Google
+            </button>
+            <button class="button button--ghost" type="button" data-social-provider="facebook">
+              Continuar con Facebook
+            </button>
+          </div>
+          <p class="muted">
+            Las credenciales de estas integraciones se activarán cuando estén disponibles.
+          </p>
+          <p class="status" data-auth-status></p>
+        </section>
+      </div>
+    </main>
+
+    <script type="module" src="../scripts/app.js"></script>
+  </body>
+</html>

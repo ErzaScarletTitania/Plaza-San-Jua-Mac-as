@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Producto | Plaza San Juan Macías</title>
+    <link rel="stylesheet" href="../styles/main.css" />
+  </head>
+  <body>
+    <header class="main-header">
+      <div class="shell main-header__inner">
+        <a class="brand-block" href="../">
+          <strong data-brand>Plaza San Juan Macías</strong>
+          <span class="muted">Ficha del producto</span>
+        </a>
+        <nav class="header-actions">
+          <a class="header-chip" href="../catalogo/">Catálogo</a>
+          <a class="header-chip" data-account-link href="../cuenta/">
+            <span data-session-chip>Mi cuenta</span>
+          </a>
+          <a class="header-chip" href="../checkout/">
+            Carrito <span data-cart-count>0</span>
+          </a>
+        </nav>
+      </div>
+    </header>
+
+    <main class="section">
+      <div class="shell product-detail" data-product-detail></div>
+    </main>
+
+    <script type="module" src="../scripts/app.js"></script>
+  </body>
+</html>
