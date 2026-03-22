@@ -52,6 +52,10 @@ function parseJson(file) {
   return JSON.parse(read(file));
 }
 
+function readWorkflow(file) {
+  return read(`.github/workflows/${file}`);
+}
+
 describe("public storefront regression coverage", () => {
   test("homepage keeps Plaza San Juan Macias branding and removes Tottus", () => {
     const dom = domFrom("deploy/index.html");
@@ -203,6 +207,8 @@ describe("seo and runtime packaging regressions", () => {
 
   test("deploy contains robots, sitemap, reparto page and generated brand assets", () => {
     const files = [
+      "deploy/.htaccess",
+      "deploy/index.html",
       "deploy/robots.txt",
       "deploy/sitemap.xml",
       "deploy/reparto/index.html",
@@ -249,6 +255,33 @@ describe("seo and runtime packaging regressions", () => {
     expect(generator).toContain('const payload = "944537419";');
     expect(generator).not.toContain("Pago manual");
     expect(generator).not.toContain("Plaza San Juan");
+  });
+
+  test("deploy workflows preserve hidden files and validate artifacts before FTP publish", () => {
+    const stagingWorkflow = readWorkflow("deploy-staging.yml");
+    const productionWorkflow = readWorkflow("deploy-production.yml");
+
+    for (const workflow of [stagingWorkflow, productionWorkflow]) {
+      expect(workflow).toContain("include-hidden-files: true");
+      expect(workflow).toContain("if-no-files-found: error");
+      expect(workflow).toContain("needs: verify");
+      expect(workflow).toContain("test -f deploy/index.html");
+      expect(workflow).toContain("test -f deploy/.htaccess");
+      expect(workflow).toContain("test -f deploy/checkout/index.html");
+      expect(workflow).toContain("test -f deploy/assets/payment/yape-qr.svg");
+    }
+  });
+
+  test("ci and deploy workflows enforce serialized runs per target branch", () => {
+    const ciWorkflow = readWorkflow("ci.yml");
+    const stagingWorkflow = readWorkflow("deploy-staging.yml");
+    const productionWorkflow = readWorkflow("deploy-production.yml");
+
+    expect(ciWorkflow).toContain("cancel-in-progress: true");
+    expect(stagingWorkflow).toContain("group: deploy-staging");
+    expect(stagingWorkflow).toContain("cancel-in-progress: true");
+    expect(productionWorkflow).toContain("group: deploy-production");
+    expect(productionWorkflow).toContain("cancel-in-progress: true");
   });
 });
 
