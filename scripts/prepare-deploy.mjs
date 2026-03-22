@@ -10,6 +10,7 @@ const catalogPath = path.join(repoRoot, "data", "catalog.json");
 const items = [
   ".htaccess",
   "index.html",
+  "admin",
   "catalogo",
   "checkout",
   "cuenta",
@@ -146,7 +147,15 @@ function productCardMarkup(product, prefix = "../") {
 }
 
 function buildJsonLd(value) {
-  return escapeHtml(JSON.stringify(value));
+  if (Array.isArray(value)) {
+    return value
+      .map(
+        (entry) => `    <script type="application/ld+json">${escapeHtml(JSON.stringify(entry))}</script>`,
+      )
+      .join("\n");
+  }
+
+  return `    <script type="application/ld+json">${escapeHtml(JSON.stringify(value))}</script>`;
 }
 
 function renderHeader(prefix) {
@@ -240,16 +249,19 @@ function pageLayout({
     <link rel="canonical" href="${canonical}" />
     <link rel="icon" href="${prefix}assets/brand/favicon.svg" type="image/svg+xml" />
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="es_PE" />
     <meta property="og:title" content="${escapeHtml(title)}" />
     <meta property="og:description" content="${escapeHtml(description)}" />
     <meta property="og:url" content="${canonical}" />
     <meta property="og:image" content="${image}" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@plazasanjuanmacias" />
     <meta name="twitter:title" content="${escapeHtml(title)}" />
     <meta name="twitter:description" content="${escapeHtml(description)}" />
     <meta name="twitter:image" content="${image}" />
+    <link rel="alternate" hreflang="es-PE" href="${canonical}" />
     <link rel="stylesheet" href="${prefix}styles/main.css" />
-    <script type="application/ld+json">${buildJsonLd(jsonLd)}</script>
+${buildJsonLd(jsonLd)}
   </head>
   <body>
     <div class="utility-bar">

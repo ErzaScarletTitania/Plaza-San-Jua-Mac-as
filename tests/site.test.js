@@ -14,6 +14,7 @@ import {
 const repoRoot = process.cwd();
 const deployRoot = path.join(repoRoot, "deploy");
 const publicHtmlFiles = [
+  "deploy/admin/index.html",
   "deploy/index.html",
   "deploy/catalogo/index.html",
   "deploy/checkout/index.html",
@@ -200,14 +201,25 @@ describe("seo and runtime packaging regressions", () => {
       expect(document.querySelector('meta[name="description"]')).not.toBeNull();
       expect(document.querySelector('meta[name="keywords"]')).not.toBeNull();
       expect(document.querySelector('link[rel="canonical"]')).not.toBeNull();
+      expect(document.querySelector('link[rel="alternate"][hreflang="es-PE"]')).not.toBeNull();
       expect(document.querySelector('meta[property="og:title"]')).not.toBeNull();
+      expect(document.querySelector('meta[property="og:locale"]')).not.toBeNull();
       expect(document.querySelector('script[type="application/ld+json"]')).not.toBeNull();
     }
+  });
+
+  test("admin page stays out of search indexing", () => {
+    const dom = domFrom("deploy/admin/index.html");
+    const robots = dom.window.document.querySelector('meta[name="robots"]');
+
+    expect(robots).not.toBeNull();
+    expect(robots.getAttribute("content")).toBe("noindex,nofollow");
   });
 
   test("deploy contains robots, sitemap, reparto page and generated brand assets", () => {
     const files = [
       "deploy/.htaccess",
+      "deploy/admin/index.html",
       "deploy/index.html",
       "deploy/robots.txt",
       "deploy/sitemap.xml",
@@ -288,6 +300,11 @@ describe("seo and runtime packaging regressions", () => {
 describe("backend and account utilities", () => {
   test("critical PHP endpoints exist for auth, profile and orders", () => {
     const files = [
+      "api/admin/login.php",
+      "api/admin/logout.php",
+      "api/admin/me.php",
+      "api/admin/orders.php",
+      "api/admin/users.php",
       "api/submit-order.php",
       "api/orders/list.php",
       "api/auth/register.php",
@@ -300,6 +317,25 @@ describe("backend and account utilities", () => {
     for (const file of files) {
       expect(exists(file)).toBe(true);
     }
+  });
+
+  test("admin page exposes login form and dashboard placeholders", () => {
+    const dom = domFrom("deploy/admin/index.html");
+    const document = dom.window.document;
+
+    expect(document.querySelector("[data-admin-login-form]")).not.toBeNull();
+    expect(document.querySelector("[data-admin-dashboard]")).not.toBeNull();
+    expect(document.querySelector("[data-admin-orders-list]")).not.toBeNull();
+    expect(document.querySelector("[data-admin-users-list]")).not.toBeNull();
+  });
+
+  test("admin bootstrap script is available in package scripts", () => {
+    const pkg = parseJson("package.json");
+    const bootstrapSource = read("scripts/bootstrap-admin.mjs");
+
+    expect(pkg.scripts["bootstrap:admin"]).toBe("node scripts/bootstrap-admin.mjs");
+    expect(bootstrapSource).toContain("admins.json");
+    expect(bootstrapSource).toContain("sha256$");
   });
 
   test("register validation catches basic invalid input", () => {
