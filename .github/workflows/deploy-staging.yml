@@ -47,11 +47,26 @@ jobs:
     needs: verify
     environment: staging
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
       - name: Download staging artifact
         uses: actions/download-artifact@v4
         with:
           name: staging-deploy-package
           path: deploy
+
+      - name: Provision admin credentials into staging artifact
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+        run: node scripts/bootstrap-admin.mjs --target-root ./deploy
 
       - name: Validate staging deploy artifact
         run: |
@@ -59,6 +74,7 @@ jobs:
           test -f deploy/.htaccess
           test -f deploy/checkout/index.html
           test -f deploy/assets/payment/yape-qr.svg
+          test -f deploy/storage/admin/admins.json
 
       - name: Publish to staging via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
