@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import os from "node:os";
 import { describe, expect, test } from "vitest";
 import { JSDOM } from "jsdom";
 import { pathToFileURL } from "node:url";
@@ -10,6 +11,7 @@ import {
   validateProfileInput,
   validateRegisterInput,
 } from "../scripts/account-utils.js";
+import { provisionAdminFile } from "../scripts/bootstrap-admin.mjs";
 
 const repoRoot = process.cwd();
 const deployRoot = path.join(repoRoot, "deploy");
@@ -277,10 +279,16 @@ describe("seo and runtime packaging regressions", () => {
       expect(workflow).toContain("include-hidden-files: true");
       expect(workflow).toContain("if-no-files-found: error");
       expect(workflow).toContain("needs: verify");
+      expect(workflow).toContain("Provision admin credentials");
+      expect(workflow).toContain("node scripts/bootstrap-admin.mjs --target-root ./deploy");
+      expect(workflow).toContain("ADMIN_EMAIL");
+      expect(workflow).toContain("ADMIN_PASSWORD");
+      expect(workflow).toContain("ADMIN_NAME");
       expect(workflow).toContain("test -f deploy/index.html");
       expect(workflow).toContain("test -f deploy/.htaccess");
       expect(workflow).toContain("test -f deploy/checkout/index.html");
       expect(workflow).toContain("test -f deploy/assets/payment/yape-qr.svg");
+      expect(workflow).toContain("test -f deploy/storage/admin/admins.json");
     }
   });
 
@@ -336,6 +344,32 @@ describe("backend and account utilities", () => {
     expect(pkg.scripts["bootstrap:admin"]).toBe("node scripts/bootstrap-admin.mjs");
     expect(bootstrapSource).toContain("admins.json");
     expect(bootstrapSource).toContain("sha256$");
+    expect(bootstrapSource).toContain("env.ADMIN_EMAIL");
+    expect(bootstrapSource).toContain("--target-root");
+  });
+
+  test("admin bootstrap script can provision an admin file into a target deploy directory", () => {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "psjm-admin-"));
+    const targetRoot = path.join(tempRoot, "deploy");
+    fs.mkdirSync(path.join(targetRoot, "storage", "admin"), { recursive: true });
+
+    return provisionAdminFile({
+      email: "liliet.polanco.peru@gmail.com",
+      password: "qwerty12345/",
+      fullName: "Administrador",
+      targetRoot,
+    }).then(() => {
+      const created = JSON.parse(
+        fs.readFileSync(path.join(targetRoot, "storage", "admin", "admins.json"), "utf8"),
+      );
+
+      expect(created).toHaveLength(1);
+      expect(created[0].email).toBe("liliet.polanco.peru@gmail.com");
+      expect(created[0].fullName).toBe("Administrador");
+      expect(created[0].role).toBe("owner");
+      expect(created[0].passwordHash).toContain("sha256$");
+      expect(created[0].passwordHash).not.toContain("qwerty12345/");
+    });
   });
 
   test("register validation catches basic invalid input", () => {
