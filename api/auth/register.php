@@ -50,6 +50,7 @@ $user = [
 ];
 
 replace_user($user);
+session_regenerate_id(true);
 $_SESSION['plaza_user_id'] = $user['id'];
 
 send_json([
