@@ -1,0 +1,8 @@
+<svg width="180" height="64" viewBox="0 0 180 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="180" height="64" rx="18" fill="#1A1D29"/>
+  <path d="M44 21L55 32L44 43L33 32L44 21Z" fill="#F3BA2F"/>
+  <path d="M61 21L72 32L61 43L50 32L61 21Z" fill="#F3BA2F"/>
+  <path d="M52.5 12L63.5 23L52.5 34L41.5 23L52.5 12Z" fill="#F3BA2F"/>
+  <path d="M52.5 30L63.5 41L52.5 52L41.5 41L52.5 30Z" fill="#F3BA2F"/>
+  <text x="92" y="39" fill="#F3BA2F" font-size="21" font-family="Trebuchet MS, sans-serif" font-weight="700">Binance</text>
+</svg>

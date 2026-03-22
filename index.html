@@ -1,35 +1,90 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-root-prefix="./">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Plaza San Juan Macías</title>
+    <title>Plaza San Juan Macías | Delivery local en San Juan Macías, Callao</title>
     <meta
       name="description"
-      content="Plaza San Juan Macías: supermercado y tienda online con catálogo amplio, cuenta de usuario y pagos por Yape, BCP, Binance y PayPal."
+      content="Compra abarrotes, limpieza, hogar, dormitorio, bazar y más en Plaza San Juan Macías. Delivery solo para San Juan Macías, Callao, Perú, con pedido mínimo de S/ 50."
     />
+    <meta
+      name="keywords"
+      content="Plaza San Juan Macías, delivery San Juan Macías, supermercado Callao, abarrotes Callao, tienda online Callao, delivery hogar Callao"
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="theme-color" content="#c1352a" />
+    <meta name="geo.region" content="PE-CAL" />
+    <meta name="geo.placename" content="San Juan Macías, Callao, Callao, Perú" />
+    <link rel="canonical" href="https://plazasanjuanmacias.infinityfree.me/" />
+    <link rel="icon" href="./assets/brand/favicon.svg" type="image/svg+xml" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Plaza San Juan Macías | Delivery local en Callao" />
+    <meta
+      property="og:description"
+      content="Tienda online con delivery para San Juan Macías, Callao. Compra productos para la casa, la despensa y el día a día."
+    />
+    <meta property="og:url" content="https://plazasanjuanmacias.infinityfree.me/" />
+    <meta
+      property="og:image"
+      content="https://plazasanjuanmacias.infinityfree.me/assets/brand/hero-canasta.svg"
+    />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="stylesheet" href="./styles/main.css" />
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Store",
+        "name": "Plaza San Juan Macías",
+        "url": "https://plazasanjuanmacias.infinityfree.me/",
+        "logo": "https://plazasanjuanmacias.infinityfree.me/assets/brand/logo-plaza-san-juan-macias.svg",
+        "image": "https://plazasanjuanmacias.infinityfree.me/assets/brand/hero-canasta.svg",
+        "telephone": "+51944537419",
+        "email": "liliet.polanco.peru@gmail.com",
+        "areaServed": "San Juan Macías, Callao, Perú",
+        "availableLanguage": "es-PE",
+        "paymentAccepted": "Yape, BCP, PayPal, Binance",
+        "currenciesAccepted": "PEN, USD",
+        "hasOfferCatalog": {
+          "@type": "OfferCatalog",
+          "name": "Catálogo Plaza San Juan Macías"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Plaza San Juan Macías",
+        "url": "https://plazasanjuanmacias.infinityfree.me/"
+      }
+    </script>
   </head>
   <body>
     <div class="utility-bar">
       <div class="shell utility-bar__inner">
-        <span>Despacho y confirmación manual de pedidos en español.</span>
-        <span>Pagos habilitados: Yape, BCP, Binance y PayPal.</span>
+        <span>Solo delivery para <span data-service-area>San Juan Macías, Callao, Perú</span>.</span>
+        <span>Pedido mínimo: <span data-min-order>S/ 50.00</span>.</span>
       </div>
     </div>
 
     <header class="main-header">
       <div class="shell main-header__inner">
-        <a class="brand-block" href="./">
-          <strong data-brand>Plaza San Juan Macías</strong>
-          <span class="muted">Compra diaria, hogar y cuidado personal</span>
+        <a class="brand-block brand-block--logo" href="./">
+          <img
+            class="brand-logo"
+            src="./assets/brand/logo-plaza-san-juan-macias.svg"
+            alt="Plaza San Juan Macías"
+          />
+          <span class="muted">Compra local con delivery bonito, rápido y bien claro.</span>
         </a>
         <form class="search-card" action="./catalogo/" method="get">
-          <input type="search" name="q" placeholder="Busca productos, marcas o categorías" />
+          <input type="search" name="q" placeholder="Busca productos, marcas o antojos" />
           <button class="button" type="submit">Buscar</button>
         </form>
         <nav class="header-actions">
-          <a class="header-chip" href="./catalogo/">Catálogo</a>
+          <a class="header-chip" href="./categorias/">Categorías</a>
+          <a class="header-chip" href="./reparto/">Reparto</a>
           <a class="header-chip" data-account-link href="./cuenta/">
             <span data-session-chip>Mi cuenta</span>
           </a>
@@ -53,36 +108,38 @@
         <div class="shell">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Categorías principales</p>
-              <h2>Estructura clara para comprar rápido.</h2>
+              <p class="eyebrow">Categorías con más salida</p>
+              <h2>Lo que más se mueve en la casa, bien acomodado para comprar sin perder tiempo.</h2>
             </div>
             <p>
-              El sitio replica una navegación amplia de supermercado, enfocada en
-              despensa, hogar, cuidado personal y productos cotidianos.
+              Esta tienda está pensada para compras reales del día a día en San Juan Macías:
+              despensa, limpieza, dormitorio, bazar, menaje y más, todo con delivery.
             </p>
           </div>
-          <div class="highlight-grid" data-category-highlights></div>
+          <div class="category-grid" data-home-categories></div>
         </div>
       </section>
 
       <section class="section">
         <div class="shell promo-grid">
-          <article class="promo-card">
-            <p class="eyebrow">Cuenta y dirección</p>
-            <h2>Registro listo para el siguiente pedido.</h2>
+          <article class="promo-card promo-card--warm">
+            <p class="eyebrow">Delivery local</p>
+            <h2>Repartimos solo en San Juan Macías, clarito nomás.</h2>
             <p>
-              Cada cliente puede registrarse, guardar su dirección y dejar lista la
-              información básica de entrega.
+              Nada de recojo en tienda. Todo sale por delivery, con pedido mínimo de
+              <span data-min-order>S/ 50.00</span> y coordinación directa por WhatsApp o desde tu cuenta.
             </p>
-            <a class="button" href="./cuenta/">Ingresar o crear cuenta</a>
+            <a class="button" href="./reparto/">Ver zonas y condiciones</a>
           </article>
-          <article class="promo-card">
-            <p class="eyebrow">Checkout manual</p>
-            <h2>Flujo simple para operar hoy.</h2>
-            <p>
-              El pedido se registra, el cliente elige un medio de pago permitido y
-              luego envía el comprobante para validación.
-            </p>
+          <article class="promo-card promo-card--cool">
+            <p class="eyebrow">Pago simple</p>
+            <h2>Logos conocidos, proceso claro y sin letra chiquita.</h2>
+            <div class="payment-logo-row">
+              <img src="./assets/payment/yape-badge.svg" alt="Yape" />
+              <img src="./assets/payment/bcp-badge.svg" alt="BCP" />
+              <img src="./assets/payment/paypal-badge.svg" alt="PayPal" />
+              <img src="./assets/payment/binance-badge.svg" alt="Binance" />
+            </div>
             <a class="button button--ghost" href="./checkout/">Ir al checkout</a>
           </article>
         </div>
@@ -92,57 +149,36 @@
         <div class="shell">
           <div class="section-heading">
             <div>
-              <p class="eyebrow">Productos destacados</p>
-              <h2>Selección ampliada con precios ajustados.</h2>
+              <p class="eyebrow">Favoritos del momento</p>
+              <h2>Productos listos para armar carrito y cerrar pedido al toque.</h2>
             </div>
-            <a class="button button--ghost" href="./catalogo/">Ver todos</a>
+            <a class="button button--ghost" href="./catalogo/">Ver catálogo</a>
           </div>
-          <div class="product-grid" data-featured-products></div>
+          <div class="product-grid" data-home-featured-products></div>
         </div>
       </section>
 
       <section class="section">
         <div class="shell stats-grid">
           <article class="stat-card">
-            <p class="eyebrow">Compra asistida</p>
-            <h3>Pagos controlados manualmente.</h3>
-            <p class="muted">Ideal para el arranque operativo sin integraciones complejas.</p>
+            <p class="eyebrow">Pedido mínimo</p>
+            <h3>S/ 50 por entrega.</h3>
+            <p class="muted">Sirve para mantener el delivery ordenado y rentable en la zona.</p>
           </article>
           <article class="stat-card">
-            <p class="eyebrow">Precios</p>
-            <h3>Catálogo con incremento base de 10%.</h3>
-            <p class="muted">Redondeado automáticamente a 2 decimales.</p>
+            <p class="eyebrow">Cobertura</p>
+            <h3>San Juan Macías, Callao.</h3>
+            <p class="muted">Enfocado en el barrio, sin prometer donde todavía no llegamos.</p>
           </article>
           <article class="stat-card">
-            <p class="eyebrow">Mi perfil</p>
-            <h3>Dirección y datos guardados.</h3>
-            <p class="muted">Preparado para la futura administración del negocio.</p>
+            <p class="eyebrow">Cuenta</p>
+            <h3>Perfil, dirección y pedidos guardados.</h3>
+            <p class="muted">Backend listo para crecer luego hacia un panel administrativo.</p>
           </article>
           <article class="stat-card">
-            <p class="eyebrow">Hosting</p>
-            <h3>Static-first para InfinityFree.</h3>
-            <p class="muted">Más simple de desplegar y mantener.</p>
-          </article>
-        </div>
-      </section>
-
-      <section class="section">
-        <div class="shell info-strip">
-          <article class="info-card">
-            <strong>Yape</strong>
-            <p class="muted">Número: <span data-yape-number></span></p>
-          </article>
-          <article class="info-card">
-            <strong>BCP</strong>
-            <p class="muted">Cuenta: <span data-bcp-account></span></p>
-          </article>
-          <article class="info-card">
-            <strong>PayPal</strong>
-            <p class="muted">Manual a <span data-paypal-email></span></p>
-          </article>
-          <article class="info-card">
-            <strong>Binance USDT</strong>
-            <p class="muted">BEP20 manual</p>
+            <p class="eyebrow">Responsive</p>
+            <h3>Diseñado para móvil y escritorio.</h3>
+            <p class="muted">Porque buena parte de la compra local entra directo por celular.</p>
           </article>
         </div>
       </section>
@@ -151,29 +187,36 @@
     <footer class="footer">
       <div class="shell footer-grid">
         <div>
-          <strong data-brand>Plaza San Juan Macías</strong>
+          <img
+            class="footer-logo"
+            src="./assets/brand/logo-plaza-san-juan-macias.svg"
+            alt="Plaza San Juan Macías"
+          />
           <p class="muted">
-            Tienda online en español con foco en compras diarias, hogar y cuidado
-            personal.
+            Delivery local para <span data-service-area>San Juan Macías, Callao, Perú</span>.
+            Pedido mínimo de <span data-min-order>S/ 50.00</span>.
           </p>
         </div>
         <div>
-          <strong>Navegación</strong>
+          <strong>Compra</strong>
+          <p><a href="./categorias/">Categorías</a></p>
           <p><a href="./catalogo/">Catálogo</a></p>
-          <p><a href="./cuenta/">Mi cuenta</a></p>
           <p><a href="./checkout/">Checkout</a></p>
         </div>
         <div>
-          <strong>Pagos</strong>
-          <p>Yape</p>
-          <p>BCP</p>
-          <p>Binance</p>
-          <p>PayPal</p>
-        </div>
-        <div>
-          <strong>Contacto</strong>
+          <strong>Servicio</strong>
+          <p><a href="./reparto/">Reparto</a></p>
           <p><a href="mailto:liliet.polanco.peru@gmail.com">Correo</a></p>
           <p><a href="https://wa.me/51944537419">WhatsApp</a></p>
+        </div>
+        <div>
+          <strong>Pagos</strong>
+          <div class="footer-payment-list">
+            <img src="./assets/payment/yape-badge.svg" alt="Yape" />
+            <img src="./assets/payment/bcp-badge.svg" alt="BCP" />
+            <img src="./assets/payment/paypal-badge.svg" alt="PayPal" />
+            <img src="./assets/payment/binance-badge.svg" alt="Binance" />
+          </div>
         </div>
       </div>
     </footer>

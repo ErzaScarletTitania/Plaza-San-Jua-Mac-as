@@ -1,0 +1,9 @@
+<svg width="360" height="96" viewBox="0 0 360 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="96" height="96" rx="28" fill="#D8342B"/>
+  <circle cx="48" cy="48" r="28" fill="#FFCA28"/>
+  <path d="M29 58C35 43 47 34 66 30C60 46 50 58 29 58Z" fill="#1D8C5C"/>
+  <path d="M39 68C45 57 56 49 74 46C69 59 59 69 39 68Z" fill="#005E9A"/>
+  <text x="118" y="40" fill="#1A1D29" font-size="24" font-family="Trebuchet MS, sans-serif" font-weight="700">Plaza San Juan</text>
+  <text x="118" y="69" fill="#B53B2E" font-size="26" font-family="Trebuchet MS, sans-serif" font-weight="800">Macías</text>
+  <text x="118" y="88" fill="#6B5F4A" font-size="13" font-family="Trebuchet MS, sans-serif">Delivery local en San Juan Macías, Callao</text>
+</svg>

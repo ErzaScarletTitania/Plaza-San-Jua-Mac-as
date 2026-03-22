@@ -1,0 +1,6 @@
+<svg width="180" height="64" viewBox="0 0 180 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="180" height="64" rx="18" fill="#F6F0FF"/>
+  <circle cx="42" cy="32" r="18" fill="#6C2BD9"/>
+  <rect x="56" y="18" width="18" height="28" rx="9" fill="#FF7A00"/>
+  <text x="92" y="39" fill="#4A249D" font-size="25" font-family="Trebuchet MS, sans-serif" font-weight="700">BCP</text>
+</svg>

@@ -1,90 +1,190 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-root-prefix="../">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Checkout | Plaza San Juan Macías</title>
+    <meta
+      name="description"
+      content="Revisa tu carrito, confirma el delivery y paga con Yape, BCP, PayPal o Binance en Plaza San Juan Macías."
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="https://plazasanjuanmacias.infinityfree.me/checkout/" />
+    <link rel="icon" href="../assets/brand/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="../styles/main.css" />
   </head>
   <body>
+    <div class="utility-bar">
+      <div class="shell utility-bar__inner">
+        <span>Delivery solo para <span data-service-area>San Juan Macías, Callao, Perú</span>.</span>
+        <span>Pedido mínimo: <span data-min-order>S/ 50.00</span>.</span>
+      </div>
+    </div>
+
     <header class="main-header">
       <div class="shell main-header__inner">
-        <a class="brand-block" href="../">
-          <strong data-brand>Plaza San Juan Macías</strong>
-          <span class="muted">Confirmación manual de pedidos</span>
+        <a class="brand-block brand-block--logo" href="../">
+          <img
+            class="brand-logo"
+            src="../assets/brand/logo-plaza-san-juan-macias.svg"
+            alt="Plaza San Juan Macías"
+          />
+          <span class="muted">Checkout listo para delivery local.</span>
         </a>
         <nav class="header-actions">
+          <a class="header-chip" href="../categorias/">Categorías</a>
           <a class="header-chip" href="../catalogo/">Catálogo</a>
           <a class="header-chip" data-account-link href="../cuenta/">
             <span data-session-chip>Mi cuenta</span>
           </a>
-          <a class="header-chip" href="../">Inicio</a>
         </nav>
       </div>
     </header>
 
     <main class="section">
-      <div class="shell checkout-layout">
-        <section class="checkout-card">
-          <p class="eyebrow">Resumen</p>
-          <h2>Tu pedido</h2>
-          <ul class="checkout-list" data-checkout-items></ul>
-          <div class="price-block price-block--large">
-            <strong data-checkout-total>S/ 0.00</strong>
+      <div class="shell">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Checkout</p>
+            <h1>Cierra tu compra y coordina el pago sin enredos.</h1>
+          </div>
+          <p class="page-note" data-checkout-minimum>
+            Estamos revisando si alcanzaste el pedido mínimo.
+          </p>
+        </div>
+
+        <div class="checkout-layout">
+          <section class="checkout-card">
+            <p class="eyebrow">Tu carrito</p>
+            <h2>Productos seleccionados</h2>
+            <ul class="checkout-list" data-checkout-items></ul>
+            <div class="total-row">
+              <strong>Total del pedido</strong>
+              <strong data-checkout-total>S/ 0.00</strong>
+            </div>
+          </section>
+
+          <aside class="summary-card">
+            <p class="eyebrow">Pagos disponibles</p>
+            <h2>Métodos habilitados</h2>
+            <div class="payment-grid">
+              <div class="payment-method">
+                <img src="../assets/payment/yape-badge.svg" alt="Yape" />
+                <div>
+                  <strong>Yape</strong>
+                  <span data-yape-number>944537419</span>
+                </div>
+              </div>
+              <div class="payment-method">
+                <img src="../assets/payment/bcp-badge.svg" alt="BCP" />
+                <div>
+                  <strong>BCP</strong>
+                  <span data-bcp-account>19299856955008</span>
+                </div>
+              </div>
+              <div class="payment-method">
+                <img src="../assets/payment/paypal-badge.svg" alt="PayPal" />
+                <div>
+                  <strong>PayPal</strong>
+                  <span data-paypal-email>liliet.polanco.peru@gmail.com</span>
+                </div>
+              </div>
+              <div class="payment-method">
+                <img src="../assets/payment/binance-badge.svg" alt="Binance" />
+                <div>
+                  <strong>Binance USDT BEP20</strong>
+                  <span>Wallet manual</span>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        <section class="section">
+          <div class="checkout-layout">
+            <section class="checkout-card">
+              <p class="eyebrow">Datos de entrega</p>
+              <h2>Solo delivery, sin recojo</h2>
+              <form class="form-grid" data-order-form>
+                <input type="text" name="fullName" placeholder="Nombre completo" required />
+                <input type="email" name="email" placeholder="Correo" required />
+                <input type="tel" name="phone" placeholder="Celular o WhatsApp" required />
+                <input
+                  type="text"
+                  name="district"
+                  placeholder="Distrito o zona de entrega"
+                  required
+                />
+                <input type="text" name="addressLine1" placeholder="Dirección principal" required />
+                <input
+                  type="text"
+                  name="addressLine2"
+                  placeholder="Interior, lote, departamento o detalle"
+                />
+                <textarea
+                  name="reference"
+                  rows="4"
+                  placeholder="Referencia para encontrar tu dirección"
+                ></textarea>
+                <select name="paymentMethod" required>
+                  <option value="">Selecciona método de pago</option>
+                  <option value="Yape">Yape</option>
+                  <option value="BCP">BCP</option>
+                  <option value="PayPal">PayPal</option>
+                  <option value="Binance USDT BEP20">Binance USDT BEP20</option>
+                </select>
+                <textarea
+                  name="notes"
+                  rows="4"
+                  placeholder="Notas del pedido o datos del comprobante"
+                ></textarea>
+                <button class="button" type="submit">Registrar pedido</button>
+                <p class="status" data-order-status></p>
+              </form>
+            </section>
+
+            <aside class="summary-card">
+              <p class="eyebrow">Transferencias y wallet</p>
+              <h2>Datos para pagar</h2>
+              <ul class="payment-list">
+                <li class="info-pill">
+                  <img class="payment-badge" src="../assets/payment/yape-badge.svg" alt="Yape" />
+                  <div>
+                    <strong>Yape</strong>
+                    <span>Número: <span data-yape-number>944537419</span></span>
+                  </div>
+                </li>
+                <li class="info-pill">
+                  <img class="payment-badge" src="../assets/payment/bcp-badge.svg" alt="BCP" />
+                  <div>
+                    <strong>BCP</strong>
+                    <span>Cuenta: <span data-bcp-account>19299856955008</span></span>
+                  </div>
+                </li>
+                <li class="info-pill">
+                  <img class="payment-badge" src="../assets/payment/paypal-badge.svg" alt="PayPal" />
+                  <div>
+                    <strong>PayPal</strong>
+                    <span>Correo: <span data-paypal-email>liliet.polanco.peru@gmail.com</span></span>
+                  </div>
+                </li>
+                <li class="info-pill">
+                  <img class="payment-badge" src="../assets/payment/binance-badge.svg" alt="Binance" />
+                  <div>
+                    <strong>Binance USDT BEP20</strong>
+                    <span data-binance-wallet>
+                      0xfba76497f467c0112232497aacfbd6013935acb2
+                    </span>
+                  </div>
+                </li>
+              </ul>
+              <div class="detail-card">
+                <p class="eyebrow">Yape QR</p>
+                <img src="../assets/payment/yape-qr.svg" alt="Código QR para pagar con Yape" />
+              </div>
+            </aside>
           </div>
         </section>
-
-        <section class="checkout-card">
-          <p class="eyebrow">Datos del cliente</p>
-          <h2>Completa el pedido</h2>
-          <form class="form-grid" data-order-form>
-            <input type="text" name="fullName" placeholder="Nombre completo" required />
-            <input type="email" name="email" placeholder="Correo de contacto" />
-            <input type="tel" name="phone" placeholder="Celular o WhatsApp" required />
-            <input type="text" name="district" placeholder="Distrito de entrega" required />
-            <input type="text" name="addressLine1" placeholder="Dirección principal" required />
-            <input type="text" name="addressLine2" placeholder="Interior, departamento o zona" />
-            <input type="text" name="reference" placeholder="Referencia para la entrega" />
-            <select name="paymentMethod" required>
-              <option value="">Selecciona el método de pago</option>
-              <option value="yape">Yape</option>
-              <option value="bcp">BCP</option>
-              <option value="paypal">PayPal</option>
-              <option value="binance">Binance USDT BEP20</option>
-            </select>
-            <textarea
-              name="notes"
-              rows="4"
-              placeholder="Horario, pedido adicional o instrucciones"
-            ></textarea>
-            <button class="button" type="submit">Registrar pedido</button>
-          </form>
-          <p class="status" data-order-status></p>
-        </section>
-      </div>
-
-      <div class="shell section">
-        <div class="payment-grid">
-          <article class="payment-card">
-            <strong>Yape</strong>
-            <p>Número: <span data-yape-number></span></p>
-            <img src="../assets/payment/yape-qr.svg" alt="QR Yape Plaza San Juan Macías" />
-          </article>
-          <article class="payment-card">
-            <strong>BCP</strong>
-            <p>Cuenta: <span data-bcp-account></span></p>
-            <p class="muted">Transferencia manual y envío de comprobante.</p>
-          </article>
-          <article class="payment-card">
-            <strong>PayPal</strong>
-            <p>Pago manual a <span data-paypal-email></span></p>
-            <p class="muted">Enviar el comprobante con el número de pedido.</p>
-          </article>
-          <article class="payment-card">
-            <strong>Binance USDT BEP20</strong>
-            <p class="muted" data-binance-wallet></p>
-          </article>
-        </div>
       </div>
     </main>
 
