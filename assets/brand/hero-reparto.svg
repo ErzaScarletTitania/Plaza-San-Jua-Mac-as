@@ -1,0 +1,14 @@
+<svg width="560" height="360" viewBox="0 0 560 360" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="560" height="360" rx="36" fill="#EAF7F0"/>
+  <rect x="84" y="144" width="276" height="118" rx="24" fill="#005E9A"/>
+  <rect x="340" y="168" width="110" height="94" rx="22" fill="#D8342B"/>
+  <circle cx="166" cy="280" r="36" fill="#1A1D29"/>
+  <circle cx="392" cy="280" r="36" fill="#1A1D29"/>
+  <circle cx="166" cy="280" r="14" fill="#FFCA28"/>
+  <circle cx="392" cy="280" r="14" fill="#FFCA28"/>
+  <rect x="128" y="106" width="96" height="56" rx="16" fill="#FFCA28"/>
+  <path d="M362 168L402 128H448V168H362Z" fill="#FFCA28"/>
+  <path d="M450 118C466 124 478 135 485 152" stroke="#1D8C5C" stroke-width="10" stroke-linecap="round"/>
+  <circle cx="82" cy="86" r="42" fill="#1D8C5C" fill-opacity="0.18"/>
+  <text x="58" y="326" fill="#124D37" font-size="34" font-family="Trebuchet MS, sans-serif" font-weight="700">Delivery que llega con ritmo</text>
+</svg>

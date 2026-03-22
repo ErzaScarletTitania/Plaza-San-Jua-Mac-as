@@ -1,14 +1,14 @@
 {
   "name": "plaza-san-juan-macias",
   "version": "1.0.0",
-  "description": "Plaza San Juan Macías website",
+  "description": "Plaza San Juan Macias website",
   "scripts": {
     "fetch:reference": "node scripts/fetch-reference-products.mjs",
     "fetch:catalog": "node scripts/fetch-category-listings.mjs",
     "build": "node scripts/build-catalog.mjs && node scripts/generate-yape-qr.mjs",
     "prepare:deploy": "node scripts/prepare-deploy.mjs",
     "test": "vitest run --pool=threads --maxWorkers=1",
-    "verify": "npm run test && npm run prepare:deploy"
+    "verify": "npm run prepare:deploy && npm run test"
   },
   "repository": {
     "type": "git",

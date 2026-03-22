@@ -1,17 +1,35 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-root-prefix="../">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mi cuenta | Plaza San Juan Macías</title>
+    <meta
+      name="description"
+      content="Ingresa o crea tu cuenta en Plaza San Juan Macías para guardar tu dirección, revisar pedidos y agilizar tu próximo delivery."
+    />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <link rel="canonical" href="https://plazasanjuanmacias.infinityfree.me/cuenta/" />
+    <link rel="icon" href="../assets/brand/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="../styles/main.css" />
   </head>
   <body>
+    <div class="utility-bar">
+      <div class="shell utility-bar__inner">
+        <span>Perfil para delivery en <span data-service-area>San Juan Macías, Callao, Perú</span>.</span>
+        <span>Pedido mínimo: <span data-min-order>S/ 50.00</span>.</span>
+      </div>
+    </div>
+
     <header class="main-header">
       <div class="shell main-header__inner">
-        <a class="brand-block" href="../">
-          <strong data-brand>Plaza San Juan Macías</strong>
-          <span class="muted">Ingreso y registro de clientes</span>
+        <a class="brand-block brand-block--logo" href="../">
+          <img
+            class="brand-logo"
+            src="../assets/brand/logo-plaza-san-juan-macias.svg"
+            alt="Plaza San Juan Macías"
+          />
+          <span class="muted">Ingreso y registro de clientes.</span>
         </a>
         <nav class="header-actions">
           <a class="header-chip" href="../catalogo/">Catálogo</a>
@@ -25,9 +43,12 @@
         <div class="section-heading">
           <div>
             <p class="eyebrow">Mi cuenta</p>
-            <h1>Ingresa o crea tu usuario.</h1>
+            <h1>Ingresa o crea tu usuario para comprar con menos vueltas.</h1>
           </div>
-          <p>Guarda tus datos y deja lista la dirección de entrega para futuras compras.</p>
+          <p>
+            Guarda tus datos, deja lista la dirección y prepara el camino para el siguiente
+            pedido, bien de barrio y sin rehacer todo cada vez.
+          </p>
         </div>
 
         <div class="account-layout">
@@ -59,9 +80,9 @@
           </section>
         </div>
 
-        <section class="auth-card section auth-card--wide">
+        <section class="auth-card section">
           <p class="eyebrow">Integraciones sociales</p>
-          <h2>Google y Facebook</h2>
+          <h2>Google y Facebook listos para la siguiente fase.</h2>
           <div class="social-grid">
             <button class="button button--ghost" type="button" data-social-provider="google">
               Continuar con Google
@@ -71,7 +92,8 @@
             </button>
           </div>
           <p class="muted">
-            Las credenciales de estas integraciones se activarán cuando estén disponibles.
+            Los botones ya están preparados. Solo faltan las credenciales oficiales para
+            encender el login social real.
           </p>
           <p class="status" data-auth-status></p>
         </section>
