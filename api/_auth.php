@@ -12,6 +12,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 if (session_status() === PHP_SESSION_NONE) {
+    $isSecure = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off';
+    session_name('plaza_session');
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => '',
+        'secure' => $isSecure,
+        'httponly' => true,
+        'samesite' => 'Lax',
+    ]);
     session_start();
 }
 
@@ -43,31 +53,44 @@ function ensure_dir(string $path): void
     }
 }
 
-function users_file(): string
+function read_json_file(string $file, array $default = []): array
 {
-    $dir = storage_path('users');
-    ensure_dir($dir);
-    $file = $dir . DIRECTORY_SEPARATOR . 'users.json';
-
     if (!file_exists($file)) {
-        file_put_contents($file, json_encode([], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
+        return $default;
     }
 
-    return $file;
+    $handle = fopen($file, 'rb');
+    if (!$handle) {
+        return $default;
+    }
+
+    flock($handle, LOCK_SH);
+    $raw = stream_get_contents($handle);
+    flock($handle, LOCK_UN);
+    fclose($handle);
+
+    $decoded = json_decode($raw ?: '[]', true);
+    return is_array($decoded) ? $decoded : $default;
 }
 
-function load_users(): array
+function write_json_file(string $file, array $payload): void
 {
-    $decoded = json_decode(file_get_contents(users_file()) ?: '[]', true);
-    return is_array($decoded) ? $decoded : [];
-}
+    ensure_dir(dirname($file));
+    $handle = fopen($file, 'cb');
+    if (!$handle) {
+        throw new RuntimeException(sprintf('No se pudo abrir %s para escritura.', $file));
+    }
 
-function save_users(array $users): void
-{
-    file_put_contents(
-        users_file(),
-        json_encode(array_values($users), JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
+    flock($handle, LOCK_EX);
+    ftruncate($handle, 0);
+    rewind($handle);
+    fwrite(
+        $handle,
+        json_encode($payload, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
     );
+    fflush($handle);
+    flock($handle, LOCK_UN);
+    fclose($handle);
 }
 
 function normalize_text(string $value): string
@@ -80,6 +103,68 @@ function normalize_email(string $value): string
     return strtolower(normalize_text($value));
 }
 
+function users_file(): string
+{
+    $file = storage_path('users', 'users.json');
+    if (!file_exists($file)) {
+        write_json_file($file, []);
+    }
+
+    return $file;
+}
+
+function admins_file(): string
+{
+    $file = storage_path('admin', 'admins.json');
+    if (!file_exists($file)) {
+        write_json_file($file, []);
+    }
+
+    return $file;
+}
+
+function load_users(): array
+{
+    return read_json_file(users_file());
+}
+
+function save_users(array $users): void
+{
+    write_json_file(users_file(), array_values($users));
+}
+
+function load_admins(): array
+{
+    return read_json_file(admins_file());
+}
+
+function save_admins(array $admins): void
+{
+    write_json_file(admins_file(), array_values($admins));
+}
+
+function hash_secret_custom(string $value): string
+{
+    $salt = bin2hex(random_bytes(16));
+    $hash = hash('sha256', $salt . '|' . $value);
+    return 'sha256$' . $salt . '$' . $hash;
+}
+
+function verify_secret_custom(string $value, string $hash): bool
+{
+    if (str_starts_with($hash, 'sha256$')) {
+        $parts = explode('$', $hash, 3);
+        if (count($parts) !== 3) {
+            return false;
+        }
+
+        [, $salt, $digest] = $parts;
+        return hash_equals($digest, hash('sha256', $salt . '|' . $value));
+    }
+
+    return password_verify($value, $hash);
+}
+
 function public_user(array $user): array
 {
     return [
@@ -89,6 +174,17 @@ function public_user(array $user): array
         'createdAt' => $user['createdAt'],
         'profile' => $user['profile'],
         'social' => $user['social'],
+    ];
+}
+
+function public_admin(array $admin): array
+{
+    return [
+        'id' => $admin['id'],
+        'email' => $admin['email'],
+        'fullName' => $admin['fullName'],
+        'createdAt' => $admin['createdAt'] ?? '',
+        'role' => $admin['role'] ?? 'owner',
     ];
 }
 
@@ -114,6 +210,28 @@ function find_user_by_id(string $userId): ?array
     return null;
 }
 
+function find_admin_by_email(string $email): ?array
+{
+    foreach (load_admins() as $admin) {
+        if (($admin['email'] ?? '') === $email) {
+            return $admin;
+        }
+    }
+
+    return null;
+}
+
+function find_admin_by_id(string $adminId): ?array
+{
+    foreach (load_admins() as $admin) {
+        if (($admin['id'] ?? '') === $adminId) {
+            return $admin;
+        }
+    }
+
+    return null;
+}
+
 function replace_user(array $updatedUser): void
 {
     $users = load_users();
@@ -129,18 +247,49 @@ function replace_user(array $updatedUser): void
     save_users($users);
 }
 
+function replace_admin(array $updatedAdmin): void
+{
+    $admins = load_admins();
+    foreach ($admins as $index => $admin) {
+        if (($admin['id'] ?? '') === ($updatedAdmin['id'] ?? '')) {
+            $admins[$index] = $updatedAdmin;
+            save_admins($admins);
+            return;
+        }
+    }
+
+    $admins[] = $updatedAdmin;
+    save_admins($admins);
+}
+
 function require_logged_in_user(): array
 {
     $userId = $_SESSION['plaza_user_id'] ?? '';
     if (!$userId) {
-        send_json(['ok' => false, 'message' => 'Debes iniciar sesión.'], 401);
+        send_json(['ok' => false, 'message' => 'Debes iniciar sesion.'], 401);
     }
 
     $user = find_user_by_id($userId);
     if (!$user) {
         unset($_SESSION['plaza_user_id']);
-        send_json(['ok' => false, 'message' => 'La sesión ya no está disponible.'], 401);
+        send_json(['ok' => false, 'message' => 'La sesion ya no esta disponible.'], 401);
     }
 
     return $user;
+}
+
+function require_logged_in_admin(): array
+{
+    $adminId = $_SESSION['plaza_admin_id'] ?? '';
+    if (!$adminId) {
+        send_json(['ok' => false, 'message' => 'Debes iniciar sesion como administrador.'], 401);
+    }
+
+    $admin = find_admin_by_id($adminId);
+    if (!$admin) {
+        unset($_SESSION['plaza_admin_id']);
+        send_json(['ok' => false, 'message' => 'La sesion de administracion ya no esta disponible.'], 401);
+    }
+
+    return $admin;
 }

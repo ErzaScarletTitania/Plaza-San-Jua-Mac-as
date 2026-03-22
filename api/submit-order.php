@@ -98,9 +98,6 @@ $order = [
 ];
 
 $target = $storageDir . DIRECTORY_SEPARATOR . $orderId . '.json';
-file_put_contents(
-    $target,
-    json_encode($order, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES)
-);
+write_json_file($target, $order);
 
 send_json(['ok' => true, 'orderId' => $orderId, 'statusLabel' => $order['statusLabel']]);
