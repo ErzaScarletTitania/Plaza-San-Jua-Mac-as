@@ -190,14 +190,14 @@ function syncCartCount() {
 
 function hydrateAddToCartButtons() {
   document.querySelectorAll("[data-add-to-cart]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.onclick = () => {
       addToCart({
         id: button.dataset.productId,
         name: button.dataset.productName,
         image: button.dataset.productImage,
         price: button.dataset.productPrice,
       });
-    });
+    };
   });
 }
 
@@ -372,7 +372,7 @@ function renderCheckout(user) {
     submitButton.disabled = !minimumReached || !cart.length;
   }
 
-  form.addEventListener("submit", async (event) => {
+  form.onsubmit = async (event) => {
     event.preventDefault();
 
     if (!minimumReached) {
@@ -427,15 +427,15 @@ function renderCheckout(user) {
     } catch (error) {
       setStatus("[data-order-status]", error.message, "error");
     }
-  });
+  };
 }
 
 function wireLogoutButtons() {
   document.querySelectorAll("[data-logout]").forEach((button) => {
-    button.addEventListener("click", async () => {
+    button.onclick = async () => {
       await fetch(sitePath("api/auth/logout.php"), { method: "POST" }).catch(() => null);
       window.location.href = sitePath("cuenta/");
-    });
+    };
   });
 }
 
@@ -460,7 +460,7 @@ function renderAccountPage(user) {
     setStatus("[data-auth-status]", "Tu sesión ya está activa. Puedes ir directo a tu perfil.");
   }
 
-  loginForm.addEventListener("submit", async (event) => {
+  loginForm.onsubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData(loginForm);
     const payload = {
@@ -484,9 +484,9 @@ function renderAccountPage(user) {
     } catch (error) {
       setStatus("[data-auth-status]", error.message, "error");
     }
-  });
+  };
 
-  registerForm.addEventListener("submit", async (event) => {
+  registerForm.onsubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData(registerForm);
     const payload = {
@@ -512,12 +512,12 @@ function renderAccountPage(user) {
     } catch (error) {
       setStatus("[data-auth-status]", error.message, "error");
     }
-  });
+  };
 
   document.querySelectorAll("[data-social-provider]").forEach((button) => {
-    button.addEventListener("click", () => {
+    button.onclick = () => {
       setStatus("[data-auth-status]", socialLoginMessage(button.dataset.socialProvider), "error");
-    });
+    };
   });
 }
 
@@ -583,7 +583,7 @@ function renderProfilePage(user) {
       "Completa tu dirección para dejar el delivery listo.";
   }
 
-  form.addEventListener("submit", async (event) => {
+  form.onsubmit = async (event) => {
     event.preventDefault();
     const formData = new FormData(form);
     const payload = {
@@ -615,7 +615,7 @@ function renderProfilePage(user) {
     } catch (error) {
       setStatus("[data-profile-status]", error.message, "error");
     }
-  });
+  };
 
   renderOrderHistory();
 }
