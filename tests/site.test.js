@@ -2,6 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
 import { JSDOM } from "jsdom";
+import { pathToFileURL } from "node:url";
 
 import {
   buildProfileSummary,
@@ -241,6 +242,14 @@ describe("seo and runtime packaging regressions", () => {
     expect(css).toContain(".product-grid");
     expect(css).toContain(".checkout-layout");
   });
+
+  test("yape QR generator only encodes the phone number payload", () => {
+    const generator = read("scripts/generate-yape-qr.mjs");
+
+    expect(generator).toContain('const payload = "944537419";');
+    expect(generator).not.toContain("Pago manual");
+    expect(generator).not.toContain("Plaza San Juan");
+  });
 });
 
 describe("backend and account utilities", () => {
@@ -297,5 +306,95 @@ describe("backend and account utilities", () => {
         addressLine1: "",
       }).length,
     ).toBeGreaterThan(0);
+  });
+});
+
+describe("frontend runtime regressions", () => {
+  test("single add-to-cart click increments the cart once after homepage hydration", async () => {
+    const dom = new JSDOM(
+      `<!doctype html><html data-root-prefix="./"><body><span data-cart-count>0</span><div data-home-featured-products></div></body></html>`,
+      { url: "https://example.com/" },
+    );
+
+    const previousGlobals = {
+      window: globalThis.window,
+      document: globalThis.document,
+      localStorage: globalThis.localStorage,
+      FormData: globalThis.FormData,
+      URLSearchParams: globalThis.URLSearchParams,
+      fetch: globalThis.fetch,
+    };
+
+    Object.assign(globalThis, {
+      window: dom.window,
+      document: dom.window.document,
+      localStorage: dom.window.localStorage,
+      FormData: dom.window.FormData,
+      URLSearchParams: dom.window.URLSearchParams,
+      fetch: async (url) => {
+        const href = String(url);
+
+        if (href.endsWith("api/auth/me.php")) {
+          return {
+            ok: false,
+            json: async () => ({ message: "Sin sesión activa." }),
+          };
+        }
+
+        if (href.endsWith("data/homepage.json")) {
+          return {
+            ok: true,
+            json: async () => ({
+              categories: [],
+              featuredProducts: [
+                {
+                  id: "prd-1",
+                  name: "Juego de sábanas clásico",
+                  image: "https://example.com/sabana.jpg",
+                  categoryName: "Dormitorio",
+                  brand: "Casa Viva",
+                  price: {
+                    current: 39.9,
+                    compareAt: null,
+                  },
+                },
+              ],
+            }),
+          };
+        }
+
+        if (href.endsWith("data/catalog-summary.json")) {
+          return {
+            ok: true,
+            json: async () => ({
+              categories: [],
+              products: [],
+            }),
+          };
+        }
+
+        throw new Error(`Unexpected fetch: ${href}`);
+      },
+    });
+
+    try {
+      const appUrl = `${pathToFileURL(path.join(repoRoot, "scripts", "app.js")).href}?runtime-test=${Date.now()}`;
+      await import(appUrl);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const button = dom.window.document.querySelector("[data-add-to-cart]");
+      const cartCount = dom.window.document.querySelector("[data-cart-count]");
+
+      expect(button).not.toBeNull();
+      button.click();
+
+      const cart = JSON.parse(dom.window.localStorage.getItem("plaza-cart"));
+      expect(cart).toHaveLength(1);
+      expect(cart[0].quantity).toBe(1);
+      expect(cartCount.textContent).toBe("1");
+    } finally {
+      Object.assign(globalThis, previousGlobals);
+      dom.window.close();
+    }
   });
 });
