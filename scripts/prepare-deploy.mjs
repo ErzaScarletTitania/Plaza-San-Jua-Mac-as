@@ -17,9 +17,14 @@ const items = [
   "reparto",
   "assets",
   "styles",
-  "scripts",
   "api",
   "storage",
+];
+const runtimeScripts = [
+  "app.js",
+  "site-data.js",
+  "account-utils.js",
+  "storefront-utils.js",
 ];
 
 const money = new Intl.NumberFormat("es-PE", {
@@ -502,6 +507,13 @@ async function main() {
   await resetDeployDir();
   for (const item of items) {
     await copyItem(item);
+  }
+  await ensureDir(path.join(deployDir, "scripts"));
+  for (const scriptName of runtimeScripts) {
+    await fs.copyFile(
+      path.join(repoRoot, "scripts", scriptName),
+      path.join(deployDir, "scripts", scriptName),
+    );
   }
 
   const rawCatalog = JSON.parse(await fs.readFile(catalogPath, "utf8"));
