@@ -16,15 +16,15 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $password === '') {
     send_json(['ok' => false, 'message' => 'Completa el correo y la contrasena.'], 422);
 }
 
-$user = find_user_by_email($email);
-if (!$user || !verify_secret_custom($password, (string) ($user['passwordHash'] ?? ''))) {
-    send_json(['ok' => false, 'message' => 'Correo o contrasena incorrectos.'], 401);
+$admin = find_admin_by_email($email);
+if (!$admin || !verify_secret_custom($password, (string) ($admin['passwordHash'] ?? ''))) {
+    send_json(['ok' => false, 'message' => 'Credenciales de administracion invalidas.'], 401);
 }
 
 session_regenerate_id(true);
-$_SESSION['plaza_user_id'] = $user['id'];
+$_SESSION['plaza_admin_id'] = $admin['id'];
 
 send_json([
     'ok' => true,
-    'user' => public_user($user),
+    'admin' => public_admin($admin),
 ]);

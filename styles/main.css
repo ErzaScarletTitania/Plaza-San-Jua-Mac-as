@@ -250,6 +250,26 @@ button {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.admin-layout,
+.admin-kpi-grid,
+.admin-data-grid {
+  display: grid;
+  gap: 18px;
+}
+
+.admin-layout {
+  grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.admin-kpi-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.admin-data-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .product-gallery {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -716,6 +736,60 @@ p {
   border: 1px solid rgba(15, 139, 141, 0.18);
 }
 
+.panel-card {
+  padding: 22px;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.stack-form {
+  display: grid;
+  gap: 14px;
+}
+
+.stack-form label {
+  display: grid;
+  gap: 8px;
+  font-weight: 700;
+}
+
+.stack-form input,
+.stack-form textarea,
+.stack-form select {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.92);
+}
+
+.status-text {
+  min-height: 24px;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.admin-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.admin-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid var(--line);
+}
+
 .footer {
   padding: 28px 0 36px;
 }
@@ -742,8 +816,14 @@ p {
   .menu-grid,
   .payment-grid,
   .social-grid,
-  .info-grid {
+  .info-grid,
+  .admin-data-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-layout,
+  .admin-kpi-grid {
+    grid-template-columns: 1fr;
   }
 
   .section-heading {
@@ -777,7 +857,10 @@ p {
   .payment-grid,
   .social-grid,
   .info-grid,
-  .product-gallery {
+  .product-gallery,
+  .admin-layout,
+  .admin-kpi-grid,
+  .admin-data-grid {
     grid-template-columns: 1fr;
   }
 
@@ -802,7 +885,8 @@ p {
   }
 
   .checkout-item,
-  .order-card {
+  .order-card,
+  .admin-list li {
     grid-template-columns: 1fr;
     text-align: left;
   }

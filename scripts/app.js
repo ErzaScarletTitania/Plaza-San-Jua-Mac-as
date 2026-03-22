@@ -209,6 +209,14 @@ async function loadCurrentUser() {
   }
 }
 
+async function loadCurrentAdmin() {
+  try {
+    return await safeJson(sitePath("api/admin/me.php"));
+  } catch {
+    return { ok: false, admin: null };
+  }
+}
+
 function updateAccountLinks(user) {
   document.querySelectorAll("[data-account-link]").forEach((node) => {
     node.setAttribute("href", user ? sitePath("perfil/") : sitePath("cuenta/"));
@@ -439,6 +447,153 @@ function wireLogoutButtons() {
   });
 }
 
+function renderAdminList(container, items, emptyMessage, renderItem) {
+  if (!container) {
+    return;
+  }
+
+  if (!items.length) {
+    container.innerHTML = `<li class="checkout-empty">${emptyMessage}</li>`;
+    return;
+  }
+
+  container.innerHTML = items.map(renderItem).join("");
+}
+
+async function renderAdminDashboard() {
+  const [ordersPayload, usersPayload] = await Promise.all([
+    safeJson(sitePath("api/admin/orders.php")),
+    safeJson(sitePath("api/admin/users.php")),
+  ]);
+
+  const orderCountNode = document.querySelector("[data-admin-order-count]");
+  const revenueNode = document.querySelector("[data-admin-revenue]");
+  const userCountNode = document.querySelector("[data-admin-user-count]");
+  const ordersList = document.querySelector("[data-admin-orders-list]");
+  const usersList = document.querySelector("[data-admin-users-list]");
+
+  if (orderCountNode) {
+    orderCountNode.textContent = String(ordersPayload.summary.orderCount ?? 0);
+  }
+  if (revenueNode) {
+    revenueNode.textContent = money.format(Number(ordersPayload.summary.revenuePen ?? 0));
+  }
+  if (userCountNode) {
+    userCountNode.textContent = String(usersPayload.summary.userCount ?? 0);
+  }
+
+  renderAdminList(
+    ordersList,
+    ordersPayload.orders ?? [],
+    "Todavia no hay pedidos para mostrar.",
+    (order) => `
+      <li>
+        <div>
+          <strong>${order.orderId}</strong>
+          <p class="muted">${order.customerName || "Cliente sin nombre"} | ${order.district || "Distrito pendiente"}</p>
+        </div>
+        <div>
+          <strong>${money.format(order.total)}</strong>
+          <p class="muted">${order.statusLabel} | ${order.paymentMethod}</p>
+        </div>
+      </li>
+    `,
+  );
+
+  renderAdminList(
+    usersList,
+    usersPayload.users ?? [],
+    "Todavia no hay clientes para mostrar.",
+    (user) => `
+      <li>
+        <div>
+          <strong>${user.fullName || "Cliente sin nombre"}</strong>
+          <p class="muted">${user.email}</p>
+        </div>
+        <div>
+          <strong>${user.district || "Sin distrito"}</strong>
+          <p class="muted">${user.createdAt ? new Date(user.createdAt).toLocaleDateString("es-PE") : ""}</p>
+        </div>
+      </li>
+    `,
+  );
+}
+
+function renderAdminPage(admin) {
+  const loginPanel = document.querySelector("[data-admin-login-panel]");
+  const loginForm = document.querySelector("[data-admin-login-form]");
+  const dashboard = document.querySelector("[data-admin-dashboard]");
+  const statusNode = document.querySelector("[data-admin-status]");
+  const headingNode = document.querySelector("[data-admin-heading]");
+  const subheadingNode = document.querySelector("[data-admin-subheading]");
+
+  if (!loginPanel && !dashboard) {
+    return;
+  }
+
+  document.querySelectorAll("[data-admin-logout]").forEach((button) => {
+    button.onclick = async () => {
+      await fetch(sitePath("api/admin/logout.php"), { method: "POST" }).catch(() => null);
+      window.location.reload();
+    };
+  });
+
+  if (loginForm) {
+    loginForm.onsubmit = async (event) => {
+      event.preventDefault();
+      const formData = new FormData(loginForm);
+
+      try {
+        await safeJson(sitePath("api/admin/login.php"), {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            email: formData.get("email"),
+            password: formData.get("password"),
+          }),
+        });
+        window.location.reload();
+      } catch (error) {
+        if (statusNode) {
+          statusNode.textContent = error.message;
+        }
+      }
+    };
+  }
+
+  if (!admin) {
+    if (loginPanel) {
+      loginPanel.hidden = false;
+    }
+    if (dashboard) {
+      dashboard.hidden = true;
+    }
+    return;
+  }
+
+  if (statusNode) {
+    statusNode.textContent = "";
+  }
+  if (loginPanel) {
+    loginPanel.hidden = true;
+  }
+  if (dashboard) {
+    dashboard.hidden = false;
+  }
+  if (headingNode) {
+    headingNode.textContent = `Panel de ${admin.fullName}`;
+  }
+  if (subheadingNode) {
+    subheadingNode.textContent = `${admin.email} | rol ${admin.role || "owner"}`;
+  }
+
+  renderAdminDashboard().catch((error) => {
+    if (statusNode) {
+      statusNode.textContent = error.message;
+    }
+  });
+}
+
 function socialLoginMessage(provider) {
   if (provider === "google" && socialAuth.googleClientId) {
     return "Google está listo para activarse en la siguiente etapa.";
@@ -627,8 +782,9 @@ async function init() {
   syncCartCount();
   setPaymentDetails();
 
-  const auth = await loadCurrentUser();
+  const [auth, adminAuth] = await Promise.all([loadCurrentUser(), loadCurrentAdmin()]);
   const currentUser = auth.user ?? null;
+  const currentAdmin = adminAuth.admin ?? null;
   updateAccountLinks(currentUser);
   wireLogoutButtons();
 
@@ -636,6 +792,7 @@ async function init() {
   renderCheckout(currentUser);
   renderAccountPage(currentUser);
   renderProfilePage(currentUser);
+  renderAdminPage(currentAdmin);
   hydrateAddToCartButtons();
 }
 
