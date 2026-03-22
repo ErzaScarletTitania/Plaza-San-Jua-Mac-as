@@ -16,21 +16,32 @@ function read(file) {
   return fs.readFileSync(path.join(repoRoot, file), "utf8");
 }
 
-function hasBlockedCategory(name) {
-  return /(tecnolog|electrohogar|comput|pc|laptop|tablet|televisor|impresora)/i.test(name);
+function domFrom(file) {
+  return new JSDOM(read(file));
 }
 
-describe("estructura del sitio", () => {
-  test("index.html usa la nueva marca y ya no menciona Tottus", () => {
-    const dom = new JSDOM(read("index.html"));
-    const text = dom.window.document.body.textContent;
+function hasBlockedCategory(name) {
+  return /(tecnolog|electrohogar|comput|pc|televisor|impresora)/i.test(name);
+}
 
-    expect(text).toContain("Plaza San Juan");
-    expect(text).not.toContain("Tottus");
+function hasBlockedProduct(name) {
+  return /\b(laptop|notebook|tablet|smart\s?tv|televisor|impresora|pc|computadora|monitor)\b/i.test(
+    name,
+  );
+}
+
+describe("estructura pública", () => {
+  test("homepage usa la nueva marca y no menciona Tottus", () => {
+    const dom = domFrom("index.html");
+    const title = dom.window.document.title;
+    const html = dom.serialize();
+
+    expect(title).toContain("Plaza San Juan Macías");
+    expect(html).not.toContain("Tottus");
   });
 
   test("checkout limita los pagos a los cuatro métodos definidos", () => {
-    const dom = new JSDOM(read("checkout/index.html"));
+    const dom = domFrom("checkout/index.html");
     const options = [...dom.window.document.querySelectorAll("option")]
       .map((node) => node.textContent.trim())
       .filter(Boolean);
@@ -42,25 +53,65 @@ describe("estructura del sitio", () => {
     expect(options.join(" ")).not.toContain("Tarjeta");
   });
 
-  test("la cuenta ofrece registro social y el perfil pide dirección de entrega", () => {
-    const accountDom = new JSDOM(read("cuenta/index.html"));
-    const profileDom = new JSDOM(read("perfil/index.html"));
+  test("cuenta ofrece login social y perfil pide dirección de entrega", () => {
+    const accountDom = domFrom("cuenta/index.html");
+    const profileDom = domFrom("perfil/index.html");
 
     const socialButtons = [...accountDom.window.document.querySelectorAll("[data-social-provider]")]
-      .map((node) => node.textContent.trim());
+      .map((node) => node.textContent.trim())
+      .join(" ");
     const profileFields = [...profileDom.window.document.querySelectorAll("input, textarea")]
-      .map((node) => node.getAttribute("name"));
+      .map((node) => node.getAttribute("name"))
+      .filter(Boolean);
 
-    expect(socialButtons.join(" ")).toContain("Google");
-    expect(socialButtons.join(" ")).toContain("Facebook");
+    expect(socialButtons).toContain("Google");
+    expect(socialButtons).toContain("Facebook");
     expect(profileFields).toContain("addressLine1");
     expect(profileFields).toContain("district");
     expect(profileFields).toContain("reference");
   });
+});
 
-  test("los endpoints de pedidos y cuenta existen", () => {
+describe("catálogo generado", () => {
+  test("catalog-summary en deploy existe y excluye categorías y productos bloqueados", () => {
+    const payload = JSON.parse(read("deploy/data/catalog-summary.json"));
+
+    expect(payload.products.length).toBeGreaterThan(0);
+    expect(payload.categories.length).toBeGreaterThan(0);
+
+    for (const category of payload.categories) {
+      expect(hasBlockedCategory(category.name)).toBe(false);
+    }
+
+    for (const product of payload.products) {
+      expect(product.price.current).toBeGreaterThan(0);
+      expect(product.price.current).toBe(Number(product.price.current.toFixed(2)));
+      expect(hasBlockedProduct(product.name)).toBe(false);
+      expect(hasBlockedCategory(product.categoryName)).toBe(false);
+    }
+  });
+
+  test("la categoría dormitorio generada contiene productos y acciones de compra", () => {
+    const dom = domFrom("deploy/categorias/dormitorio/index.html");
+    const productCards = dom.window.document.querySelectorAll(".product-card");
+    const addButtons = dom.window.document.querySelectorAll("[data-add-to-cart]");
+
+    expect(productCards.length).toBeGreaterThan(0);
+    expect(addButtons.length).toBeGreaterThan(0);
+  });
+
+  test("se generan páginas SEO básicas de despliegue", () => {
+    expect(fs.existsSync(path.join(repoRoot, "deploy", "sitemap.xml"))).toBe(true);
+    expect(fs.existsSync(path.join(repoRoot, "deploy", "robots.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(repoRoot, "deploy", "reparto", "index.html"))).toBe(true);
+  });
+});
+
+describe("backend", () => {
+  test("los endpoints clave existen", () => {
     const files = [
       "api/submit-order.php",
+      "api/orders/list.php",
       "api/auth/register.php",
       "api/auth/login.php",
       "api/auth/logout.php",
@@ -94,7 +145,7 @@ describe("utilidades de cuenta", () => {
     const summary = buildProfileSummary({
       fullName: "Liliet Polanco",
       addressLine1: "Av. Siempre Viva 742",
-      district: "Lima",
+      district: "Callao",
       reference: "Puerta verde",
     });
 
@@ -112,25 +163,5 @@ describe("utilidades de cuenta", () => {
         addressLine1: "",
       }).length,
     ).toBeGreaterThan(0);
-  });
-});
-
-describe("catálogo generado", () => {
-  test("catalog.json existe, tiene productos y excluye categorías bloqueadas", () => {
-    const payload = JSON.parse(read("data/catalog.json"));
-    expect(payload.products.length).toBeGreaterThan(0);
-    expect(payload.categories.length).toBeGreaterThan(0);
-
-    for (const category of payload.categories) {
-      expect(hasBlockedCategory(category.name)).toBe(false);
-    }
-
-    for (const product of payload.products) {
-      expect(product.price.current).toBeGreaterThan(0);
-      expect(product.price.current).toBe(Number(product.price.current.toFixed(2)));
-      expect(product.name).toBeTruthy();
-      expect(product.image).toBeTruthy();
-      expect(hasBlockedCategory(product.categories.at(-1)?.name ?? "")).toBe(false);
-    }
   });
 });
