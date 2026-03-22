@@ -5,9 +5,7 @@ import QRCode from "qrcode";
 const repoRoot = process.cwd();
 const targetDir = path.join(repoRoot, "assets", "payment");
 const targetFile = path.join(targetDir, "yape-qr.svg");
-
-const payload =
-  "Plaza San Juan Macías|Yape|944537419|Pago manual|Enviar comprobante con tu número de pedido";
+const payload = "944537419";
 
 await fs.mkdir(targetDir, { recursive: true });
 const svg = await QRCode.toString(payload, {
