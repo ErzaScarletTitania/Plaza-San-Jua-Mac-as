@@ -113,9 +113,9 @@ function productCardMarkup(product, prefix = "../") {
 
   return `
     <article class="product-card">
-      <a href="${relativeUrl(prefix, product.url)}" class="product-card__image">
+      <div class="product-card__image">
         <img src="${escapeHtml(product.image)}" alt="${escapeHtml(product.name)}" loading="lazy" />
-      </a>
+      </div>
       <div class="product-card__body">
         <p class="product-card__category">${escapeHtml(product.categoryName)}</p>
         <h3>${escapeHtml(product.name)}</h3>
@@ -136,8 +136,8 @@ function productCardMarkup(product, prefix = "../") {
           >
             Agregar
           </button>
-          <a class="button button--soft" href="${relativeUrl(prefix, product.url)}">
-            Ver detalle
+          <a class="button button--soft" href="${prefix}checkout/">
+            Ir a pagar
           </a>
         </div>
       </div>

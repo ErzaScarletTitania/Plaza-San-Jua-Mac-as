@@ -121,9 +121,9 @@ function productCardMarkup(product) {
     : "";
   return `
     <article class="product-card">
-      <a href="${sitePath(product.url)}" class="product-card__image">
+      <div class="product-card__image">
         <img src="${product.image}" alt="${repairText(product.name)}" loading="lazy" />
-      </a>
+      </div>
       <div class="product-card__body">
         <p class="product-card__category">${repairText(product.categoryName)}</p>
         <h3>${repairText(product.name)}</h3>
@@ -144,7 +144,7 @@ function productCardMarkup(product) {
           >
             Agregar
           </button>
-          <a class="button button--soft" href="${sitePath(product.url)}">Ver detalle</a>
+          <a class="button button--soft" href="${sitePath("checkout/")}">Ir a pagar</a>
         </div>
       </div>
     </article>
