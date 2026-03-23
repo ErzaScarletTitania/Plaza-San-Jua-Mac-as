@@ -1,20 +1,10 @@
 <!doctype html>
-<html lang="es" data-root-prefix="../">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Administracion | Plaza San Juan Macias</title>
-    <meta
-      name="description"
-      content="Panel base de administracion para revisar pedidos, clientes y estado operativo de Plaza San Juan Macias."
-    />
-    <meta
-      name="keywords"
-      content="administracion Plaza San Juan Macias, pedidos, clientes, dashboard ecommerce Callao"
-    />
+    <title>Acceso Admin | Plaza San Juan Macias</title>
     <meta name="robots" content="noindex,nofollow" />
-    <meta name="theme-color" content="#c1352a" />
-    <link rel="canonical" href="https://plazasanjuanmacias.infinityfree.me/admin/" />
     <link rel="icon" href="../assets/brand/favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="../styles/main.css" />
   </head>
@@ -34,29 +24,21 @@
             src="../assets/brand/logo-plaza-san-juan-macias.svg"
             alt="Plaza San Juan Macias"
           />
-          <span class="muted">Panel base para pedidos, clientes y operacion.</span>
+          <span class="muted">Acceso alterno al panel.</span>
         </a>
-        <div class="search-card">
-          <strong>Administracion</strong>
-          <span class="muted">Base lista para crecer a dashboard completo.</span>
-        </div>
-        <nav class="header-actions">
-          <a class="header-chip" href="../">Volver a tienda</a>
-          <button class="header-chip" type="button" data-admin-logout>Cerrar sesion</button>
-        </nav>
       </div>
     </header>
 
     <main class="section">
       <div class="shell admin-layout">
-        <section class="panel-card" data-admin-login-panel>
+        <section class="panel-card">
           <p class="eyebrow">Acceso admin</p>
-          <h1>Entra con el usuario interno</h1>
+          <h1>Entrar al panel</h1>
           <p class="muted">
-            Si todavia no existe un admin, crea el primero con
-            <code>npm run bootstrap:admin -- --email tu@correo.com --password clave --name "Tu nombre"</code>.
+            Este acceso alterno envia el formulario directamente al panel PHP.
           </p>
-          <form class="stack-form" data-admin-login-form>
+          <form class="stack-form" method="post" action="./index.php">
+            <input type="hidden" name="action" value="login" />
             <label>
               Correo
               <input type="email" name="email" autocomplete="username" required />
@@ -67,65 +49,11 @@
             </label>
             <button class="button" type="submit">Entrar al panel</button>
           </form>
-          <p class="status-text" data-admin-status></p>
-        </section>
-
-        <section class="panel-card admin-dashboard" data-admin-dashboard hidden>
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow">Resumen operativo</p>
-              <h2 data-admin-heading>Panel de seguimiento</h2>
-            </div>
-            <p class="muted" data-admin-subheading></p>
-          </div>
-
-          <div class="admin-kpi-grid">
-            <article class="stat-card">
-              <p class="eyebrow">Pedidos</p>
-              <h3 data-admin-order-count>0</h3>
-              <p class="muted">Pedidos guardados en el backend local.</p>
-            </article>
-            <article class="stat-card">
-              <p class="eyebrow">Venta estimada</p>
-              <h3 data-admin-revenue>S/ 0.00</h3>
-              <p class="muted">Suma de pedidos registrados hasta el momento.</p>
-            </article>
-            <article class="stat-card">
-              <p class="eyebrow">Clientes</p>
-              <h3 data-admin-user-count>0</h3>
-              <p class="muted">Usuarios con cuenta guardada.</p>
-            </article>
-          </div>
-
-          <div class="admin-data-grid">
-            <section class="panel-card">
-              <div class="section-heading">
-                <div>
-                  <p class="eyebrow">Pedidos recientes</p>
-                  <h3>Cola operativa</h3>
-                </div>
-              </div>
-              <ul class="admin-list" data-admin-orders-list>
-                <li class="checkout-empty">Todavia no hay pedidos para mostrar.</li>
-              </ul>
-            </section>
-
-            <section class="panel-card">
-              <div class="section-heading">
-                <div>
-                  <p class="eyebrow">Clientes recientes</p>
-                  <h3>Base de usuarios</h3>
-                </div>
-              </div>
-              <ul class="admin-list" data-admin-users-list>
-                <li class="checkout-empty">Todavia no hay clientes para mostrar.</li>
-              </ul>
-            </section>
-          </div>
+          <p class="muted">
+            Si ya estas autenticada, tambien puedes abrir <a href="./index.php">index.php</a>.
+          </p>
         </section>
       </div>
     </main>
-
-    <script type="module" src="../scripts/app.js"></script>
   </body>
 </html>
