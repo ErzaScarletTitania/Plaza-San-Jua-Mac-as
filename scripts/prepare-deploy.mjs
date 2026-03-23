@@ -210,7 +210,7 @@ function renderFooter(prefix) {
         <div>
           <strong>Pagos</strong>
           <div class="footer-payment-list">
-            <img src="${prefix}assets/payment/yape-badge.svg" alt="Yape" />
+            <img src="${prefix}assets/payment/yape-badge.png" alt="Yape" />
             <img src="${prefix}assets/payment/bcp-badge.svg" alt="BCP" />
             <img src="${prefix}assets/payment/paypal-badge.svg" alt="PayPal" />
             <img src="${prefix}assets/payment/binance-badge.svg" alt="Binance" />
