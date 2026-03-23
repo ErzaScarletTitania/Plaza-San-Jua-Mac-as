@@ -105,6 +105,7 @@ button {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 0;
 }
 
 .brand-block--logo {
@@ -114,6 +115,12 @@ button {
 .brand-logo,
 .footer-logo {
   width: clamp(148px, 20vw, 220px);
+}
+
+.brand-block .muted {
+  display: block;
+  max-width: 22ch;
+  overflow-wrap: anywhere;
 }
 
 .search-card {
@@ -433,6 +440,7 @@ p {
   gap: 6px;
   align-content: space-between;
   min-height: 142px;
+  overflow: hidden;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.92), rgba(255, 235, 212, 0.94)),
     var(--surface);
@@ -486,10 +494,13 @@ p {
 
 .product-card {
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .product-card__image {
-  aspect-ratio: 1 / 1;
+  height: 240px;
   display: grid;
   place-items: center;
   background:
@@ -508,6 +519,7 @@ p {
   display: grid;
   gap: 10px;
   padding: 18px;
+  align-content: start;
 }
 
 .product-card__category,
@@ -566,6 +578,8 @@ p {
   justify-self: center;
   align-self: center;
   width: min(100%, 420px);
+  max-height: 280px;
+  object-fit: contain;
 }
 
 .checkout-list,
@@ -666,6 +680,7 @@ p {
 .payment-method img {
   width: 44px;
   height: 44px;
+  object-fit: contain;
 }
 
 .product-detail-page {

@@ -1,14 +1,13 @@
 <svg width="560" height="360" viewBox="0 0 560 360" fill="none" xmlns="http://www.w3.org/2000/svg">
   <rect width="560" height="360" rx="36" fill="#FFF7E0"/>
-  <rect x="84" y="92" width="392" height="188" rx="28" fill="#1A1D29"/>
-  <circle cx="146" cy="146" r="36" fill="#7D3AF2"/>
-  <circle cx="224" cy="146" r="36" fill="#005E9A"/>
-  <circle cx="302" cy="146" r="36" fill="#1D8C5C"/>
-  <circle cx="380" cy="146" r="36" fill="#FFCA28"/>
-  <circle cx="458" cy="146" r="36" fill="#D8342B"/>
-  <rect x="122" y="210" width="316" height="18" rx="9" fill="#FFF4E4"/>
-  <rect x="122" y="242" width="244" height="18" rx="9" fill="#F5C29A"/>
-  <path d="M96 58C164 28 240 24 328 40" stroke="#D8342B" stroke-width="16" stroke-linecap="round"/>
-  <path d="M270 56C344 20 416 24 494 48" stroke="#005E9A" stroke-width="16" stroke-linecap="round"/>
-  <text x="64" y="318" fill="#8E341B" font-size="34" font-family="Trebuchet MS, sans-serif" font-weight="700">Pago clarito, diseño con punche</text>
+  <rect x="72" y="74" width="416" height="212" rx="30" fill="#1A1D29"/>
+  <circle cx="150" cy="136" r="34" fill="#7D3AF2"/>
+  <circle cx="226" cy="136" r="34" fill="#005E9A"/>
+  <circle cx="302" cy="136" r="34" fill="#1D8C5C"/>
+  <circle cx="378" cy="136" r="34" fill="#FFCA28"/>
+  <circle cx="454" cy="136" r="34" fill="#D8342B"/>
+  <rect x="118" y="198" width="324" height="18" rx="9" fill="#FFF4E4"/>
+  <rect x="118" y="230" width="238" height="18" rx="9" fill="#F5C29A"/>
+  <path d="M92 54C158 22 242 22 326 38" stroke="#D8342B" stroke-width="14" stroke-linecap="round"/>
+  <path d="M286 52C356 18 422 20 492 46" stroke="#005E9A" stroke-width="14" stroke-linecap="round"/>
 </svg>
