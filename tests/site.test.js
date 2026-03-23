@@ -242,11 +242,11 @@ describe("seo and runtime packaging regressions", () => {
       "deploy/assets/brand/hero-canasta.svg",
       "deploy/assets/brand/hero-reparto.svg",
       "deploy/assets/brand/hero-colores.svg",
-      "deploy/assets/payment/yape-badge.svg",
+      "deploy/assets/payment/yape-badge.png",
       "deploy/assets/payment/bcp-badge.svg",
       "deploy/assets/payment/paypal-badge.svg",
       "deploy/assets/payment/binance-badge.svg",
-      "deploy/assets/payment/yape-qr.svg",
+      "deploy/assets/payment/yape-qr.jpeg",
     ];
 
     for (const file of files) {
@@ -273,14 +273,25 @@ describe("seo and runtime packaging regressions", () => {
     expect(css).toContain("@media (max-width: 720px)");
     expect(css).toContain(".product-grid");
     expect(css).toContain(".checkout-layout");
+    expect(css).toContain("height: 240px;");
+    expect(css).toContain("max-width: 22ch;");
+    expect(css).toContain("max-height: 280px;");
   });
 
-  test("yape QR generator only encodes the phone number payload", () => {
-    const generator = read("scripts/generate-yape-qr.mjs");
+  test("yape assets use the provided fixed logo and qr files", () => {
+    const pkg = parseJson("package.json");
+    const checkoutHtml = read("deploy/checkout/index.html");
 
-    expect(generator).toContain('const payload = "944537419";');
-    expect(generator).not.toContain("Pago manual");
-    expect(generator).not.toContain("Plaza San Juan");
+    expect(pkg.scripts.build).toBe("node scripts/build-catalog.mjs");
+    expect(checkoutHtml).toContain("../assets/payment/yape-badge.png");
+    expect(checkoutHtml).toContain("../assets/payment/yape-qr.jpeg");
+  });
+
+  test("category promo artwork no longer contains cropped text inside the svg", () => {
+    const heroColors = read("assets/brand/hero-colores.svg");
+
+    expect(heroColors).not.toContain("<text");
+    expect(heroColors).toContain("<circle");
   });
 
   test("deploy workflows preserve hidden files and validate artifacts before FTP publish", () => {
@@ -299,7 +310,7 @@ describe("seo and runtime packaging regressions", () => {
       expect(workflow).toContain("test -f deploy/index.html");
       expect(workflow).toContain("test -f deploy/.htaccess");
       expect(workflow).toContain("test -f deploy/checkout/index.html");
-      expect(workflow).toContain("test -f deploy/assets/payment/yape-qr.svg");
+      expect(workflow).toContain("test -f deploy/assets/payment/yape-qr.jpeg");
       expect(workflow).toContain("test -f deploy/storage/admin/admins.json");
     }
 
