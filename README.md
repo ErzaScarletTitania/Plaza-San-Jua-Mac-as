@@ -1,56 +1,70 @@
-# Plaza San Juan Macías
+# Plaza San Juan Macias
 
-Sitio de comercio electrónico static-first para `plazasanjuanmacias.infinityfree.me`.
+Sitio de comercio electronico static-first para `plazasanjuanmacias.infinityfree.me`.
 
 ## Flujo principal
 
 1. `npm run fetch:reference`
-   Descarga y guarda las páginas de producto de referencia enlazadas desde la fuente base guardada.
+   Descarga y guarda las paginas de producto de referencia enlazadas desde la fuente base guardada.
 
 2. `npm run fetch:catalog`
-   Descarga páginas de categorías permitidas y amplía el catálogo sin tecnología ni PCs.
+   Descarga paginas de categorias permitidas y amplia el catalogo sin tecnologia ni PCs.
 
 3. `npm run build`
-   Genera el catálogo local y el QR de Yape.
+   Genera el catalogo local y el QR de Yape.
 
 4. `npm run test`
-   Ejecuta las verificaciones automáticas del sitio.
+   Ejecuta las verificaciones automaticas del sitio.
 
 5. `npm run verify`
    Ejecuta pruebas y prepara la carpeta `deploy/` antes de publicar.
 
-## Publicación
+6. `npm run db:export-sql`
+   Genera `database/mysql/import-from-json.sql` para migrar usuarios, admins y pedidos desde `storage/` hacia MySQL.
+
+## Publicacion
 
 La carpeta del repositorio es publicable como sitio static-first. Los endpoints PHP guardan:
 
 - pedidos en `storage/orders/`
 - usuarios en `storage/users/users.json`
+- admins en `storage/admin/admins.json`
+
+## MySQL para InfinityFree
+
+La base para migrar a MySQL ya esta preparada:
+
+- esquema SQL en `database/mysql/schema.sql`
+- helper PDO en `api/_database.php`
+- exportador de datos en `scripts/export-json-to-mysql.mjs`
+- guia en `docs/mysql-migration.md`
 
 ## CI/CD con GitHub Actions
 
-El flujo `.github/workflows/deploy.yml` hace esto en cada push a `main`:
+Los workflows actuales hacen esto:
 
-1. instala dependencias con `npm ci`
-2. ejecuta `npm run verify`
-3. genera la carpeta `deploy/`
-4. publica `deploy/` por FTP a InfinityFree
+1. instalan dependencias con `npm ci`
+2. ejecutan `npm run verify`
+3. generan la carpeta `deploy/`
+4. provisionan el admin desde secretos de GitHub
+5. publican `deploy/` por FTP a InfinityFree
 
 ### Secrets requeridos en GitHub
 
-Configura estos secretos del repositorio:
-
-- `FTP_SERVER`: `ftpupload.net`
-- `FTP_USERNAME`: tu usuario FTP de InfinityFree
-- `FTP_PASSWORD`: tu contraseña FTP de InfinityFree
-- `FTP_SERVER_DIR`: `/htdocs/`
-
-Con esos secretos, cualquier commit enviado a `main` quedará versionado y luego desplegado automáticamente al sitio en vivo.
+- `FTP_SERVER`
+- `FTP_USERNAME`
+- `FTP_PASSWORD`
+- `FTP_SERVER_DIR_STAGING`
+- `FTP_SERVER_DIR_PRODUCTION`
+- `ADMIN_EMAIL`
+- `ADMIN_PASSWORD`
+- `ADMIN_NAME`
 
 ## Cuenta de usuario
 
-- Registro e inicio de sesión con PHP y sesiones.
-- Perfil con nombre, teléfono y dirección de entrega.
-- Botones preparados para integración futura con Google y Facebook.
+- Registro e inicio de sesion con PHP y sesiones.
+- Perfil con nombre, telefono y direccion de entrega.
+- Botones preparados para integracion futura con Google y Facebook.
 
 ## Pagos
 
