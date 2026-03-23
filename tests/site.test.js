@@ -276,6 +276,9 @@ describe("seo and runtime packaging regressions", () => {
     expect(css).toContain("height: 240px;");
     expect(css).toContain("max-width: 22ch;");
     expect(css).toContain("max-height: 280px;");
+    expect(css).toContain("padding: 28px 176px 28px 28px;");
+    expect(css).toContain("width: min(28%, 140px);");
+    expect(css).toContain("max-height: 110px;");
   });
 
   test("yape assets use the provided fixed logo and qr files", () => {
@@ -289,9 +292,20 @@ describe("seo and runtime packaging regressions", () => {
 
   test("category promo artwork no longer contains cropped text inside the svg", () => {
     const heroColors = read("assets/brand/hero-colores.svg");
+    const heroCanasta = read("assets/brand/hero-canasta.svg");
+    const heroReparto = read("assets/brand/hero-reparto.svg");
 
     expect(heroColors).not.toContain("<text");
     expect(heroColors).toContain("<circle");
+    expect(heroCanasta).not.toContain("<text");
+    expect(heroReparto).not.toContain("<text");
+  });
+
+  test("delivery page includes the expanded covered areas", () => {
+    const repartoHtml = read("deploy/reparto/index.html");
+
+    expect(repartoHtml).toContain("200 Millas");
+    expect(repartoHtml).toContain("Los Portales del Aeropuerto");
   });
 
   test("deploy workflows preserve hidden files and validate artifacts before FTP publish", () => {

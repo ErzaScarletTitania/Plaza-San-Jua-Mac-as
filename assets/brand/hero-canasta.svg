@@ -2,6 +2,7 @@
   <rect width="560" height="360" rx="36" fill="#FFF4E4"/>
   <circle cx="94" cy="88" r="56" fill="#FFCA28" fill-opacity="0.7"/>
   <circle cx="470" cy="268" r="72" fill="#D8342B" fill-opacity="0.18"/>
+  <circle cx="458" cy="92" r="18" fill="#1D8C5C" fill-opacity="0.2"/>
   <path d="M168 150H384L402 272H150L168 150Z" fill="#C06E2E"/>
   <path d="M198 150C215 100 241 76 276 76C312 76 337 100 354 150" stroke="#7F4316" stroke-width="14" stroke-linecap="round"/>
   <rect x="192" y="126" width="34" height="64" rx="14" fill="#2E8B57"/>
@@ -10,5 +11,6 @@
   <circle cx="356" cy="136" r="22" fill="#FFCA28"/>
   <path d="M178 222H374" stroke="#F5C29A" stroke-width="10" stroke-linecap="round"/>
   <path d="M170 248H382" stroke="#F5C29A" stroke-width="10" stroke-linecap="round"/>
-  <text x="54" y="318" fill="#4B2A14" font-size="34" font-family="Trebuchet MS, sans-serif" font-weight="700">Canasta lista para el barrio</text>
+  <circle cx="138" cy="276" r="14" fill="#FFCA28"/>
+  <circle cx="170" cy="300" r="10" fill="#D8342B" fill-opacity="0.4"/>
 </svg>
