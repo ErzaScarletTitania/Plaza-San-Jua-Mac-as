@@ -2,15 +2,45 @@
 
 declare(strict_types=1);
 
+function runtime_config(): array
+{
+    static $config = null;
+    if (is_array($config)) {
+        return $config;
+    }
+
+    $file = __DIR__ . DIRECTORY_SEPARATOR . '_runtime-config.php';
+    if (file_exists($file)) {
+        $loaded = require $file;
+        $config = is_array($loaded) ? $loaded : [];
+        return $config;
+    }
+
+    $config = [];
+    return $config;
+}
+
+function db_config_value(string $key, string $fallback = ''): string
+{
+    $runtime = runtime_config();
+    $runtimeDb = is_array($runtime['db'] ?? null) ? $runtime['db'] : [];
+
+    if (($runtimeDb[$key] ?? '') !== '') {
+        return trim((string) $runtimeDb[$key]);
+    }
+
+    return trim((string) ($_ENV[$key] ?? getenv($key) ?: $fallback));
+}
+
 function db_config(): array
 {
     return [
-        'host' => trim((string) ($_ENV['DB_HOST'] ?? getenv('DB_HOST') ?: '')),
-        'port' => trim((string) ($_ENV['DB_PORT'] ?? getenv('DB_PORT') ?: '3306')),
-        'name' => trim((string) ($_ENV['DB_NAME'] ?? getenv('DB_NAME') ?: '')),
-        'user' => trim((string) ($_ENV['DB_USER'] ?? getenv('DB_USER') ?: '')),
-        'password' => (string) ($_ENV['DB_PASSWORD'] ?? getenv('DB_PASSWORD') ?: ''),
-        'charset' => trim((string) ($_ENV['DB_CHARSET'] ?? getenv('DB_CHARSET') ?: 'utf8mb4')),
+        'host' => db_config_value('DB_HOST'),
+        'port' => db_config_value('DB_PORT', '3306'),
+        'name' => db_config_value('DB_NAME'),
+        'user' => db_config_value('DB_USER'),
+        'password' => db_config_value('DB_PASSWORD'),
+        'charset' => db_config_value('DB_CHARSET', 'utf8mb4'),
     ];
 }
 

@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-    send_json(['ok' => false, 'message' => 'Método no permitido.'], 405);
+    send_json(['ok' => false, 'message' => 'Metodo no permitido.'], 405);
 }
 
 $payload = read_payload();
@@ -24,12 +24,12 @@ $allowedPaymentMethods = ['Yape', 'BCP', 'PayPal', 'Binance USDT BEP20'];
 $minimumOrder = 50;
 
 if (normalize_text((string) ($customer['fullName'] ?? '')) === '' || empty($items)) {
-    send_json(['ok' => false, 'message' => 'Pedido inválido.'], 422);
+    send_json(['ok' => false, 'message' => 'Pedido invalido.'], 422);
 }
 
 $paymentMethod = normalize_text((string) ($customer['paymentMethod'] ?? ''));
 if (!in_array($paymentMethod, $allowedPaymentMethods, true)) {
-    send_json(['ok' => false, 'message' => 'Selecciona un método de pago válido.'], 422);
+    send_json(['ok' => false, 'message' => 'Selecciona un metodo de pago valido.'], 422);
 }
 
 $normalizedItems = [];
@@ -58,22 +58,19 @@ foreach ($items as $item) {
 }
 
 if ($normalizedItems === []) {
-    send_json(['ok' => false, 'message' => 'Tu carrito no tiene productos válidos.'], 422);
+    send_json(['ok' => false, 'message' => 'Tu carrito no tiene productos validos.'], 422);
 }
 
 $computedTotal = round($computedTotal, 2);
 if ($computedTotal < $minimumOrder) {
-    send_json(['ok' => false, 'message' => 'El pedido mínimo para delivery es S/ 50.00.'], 422);
+    send_json(['ok' => false, 'message' => 'El pedido minimo para delivery es S/ 50.00.'], 422);
 }
-
-$storageDir = storage_path('orders');
-ensure_dir($storageDir);
 
 $orderId = 'PSJM-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(4)), 0, 8);
 $order = [
     'orderId' => $orderId,
     'status' => 'pending_payment_review',
-    'statusLabel' => 'Pendiente de validación de pago',
+    'statusLabel' => 'Pendiente de validacion de pago',
     'savedAt' => date(DATE_ATOM),
     'createdAt' => (string) ($payload['createdAt'] ?? date(DATE_ATOM)),
     'currency' => 'PEN',
@@ -97,7 +94,6 @@ $order = [
     'items' => $normalizedItems,
 ];
 
-$target = $storageDir . DIRECTORY_SEPARATOR . $orderId . '.json';
-write_json_file($target, $order);
+persist_order($order);
 
 send_json(['ok' => true, 'orderId' => $orderId, 'statusLabel' => $order['statusLabel']]);
