@@ -219,10 +219,21 @@ describe("seo and runtime packaging regressions", () => {
     expect(robots.getAttribute("content")).toBe("noindex,nofollow");
   });
 
+  test("static admin entry redirects immediately to the php panel", () => {
+    const adminHtml = read("deploy/admin/index.html");
+
+    expect(adminHtml).toContain('method="post" action="./index.php"');
+    expect(adminHtml).toContain('name="action" value="login"');
+    expect(adminHtml).toContain('name="email"');
+    expect(adminHtml).toContain('name="password"');
+  });
+
   test("deploy contains robots, sitemap, reparto page and generated brand assets", () => {
     const files = [
       "deploy/.htaccess",
+      "deploy/admin/.htaccess",
       "deploy/admin/index.html",
+      "deploy/admin/index.php",
       "deploy/index.html",
       "deploy/robots.txt",
       "deploy/sitemap.xml",
@@ -353,13 +364,26 @@ describe("backend and account utilities", () => {
   });
 
   test("admin page exposes login form and dashboard placeholders", () => {
-    const dom = domFrom("deploy/admin/index.html");
+    const dom = domFrom("deploy/admin/index.php");
     const document = dom.window.document;
 
-    expect(document.querySelector("[data-admin-login-form]")).not.toBeNull();
-    expect(document.querySelector("[data-admin-dashboard]")).not.toBeNull();
-    expect(document.querySelector("[data-admin-orders-list]")).not.toBeNull();
-    expect(document.querySelector("[data-admin-users-list]")).not.toBeNull();
+    expect(document.querySelector('form[method="post"]')).not.toBeNull();
+    expect(document.body.textContent).toContain("Acceso admin");
+    expect(document.body.textContent).toContain("Pedidos recientes");
+    expect(document.body.textContent).toContain("Clientes recientes");
+  });
+
+  test("server-side admin page exists and prioritizes php over static html", () => {
+    const adminHtaccess = read("admin/.htaccess");
+    const adminPhp = read("admin/index.php");
+
+    expect(adminHtaccess).toContain("DirectoryIndex index.php index.html");
+    expect(adminPhp).toContain("method=\"post\" action=\"./index.php\"");
+    expect(adminPhp).not.toContain("require_logged_in_admin()");
+    expect(adminPhp).toContain("find_admin_by_id($adminSessionId)");
+    expect(adminPhp).toContain("Content-Type: text/html; charset=utf-8");
+    expect(adminPhp).toContain("load_admins()");
+    expect(adminPhp).toContain("replace_admin($storedAdmin)");
   });
 
   test("admin bootstrap script is available in package scripts", () => {
@@ -431,6 +455,14 @@ describe("backend and account utilities", () => {
     expect(migrationEndpoint).toContain("db_is_configured()");
     expect(migrationEndpoint).toContain("mysql_schema_sql()");
     expect(migrationEndpoint).toContain("persist_order(");
+  });
+
+  test("admin login endpoint can recover from stale mysql admin hashes using local admin storage", () => {
+    const loginEndpoint = read("api/admin/login.php");
+
+    expect(loginEndpoint).toContain("foreach (load_admins() as $storedAdmin)");
+    expect(loginEndpoint).toContain("replace_admin($storedAdmin);");
+    expect(loginEndpoint).toContain("Credenciales de administracion invalidas.");
   });
 
   test("runtime config renderer can provision mysql credentials into a target deploy directory", async () => {
