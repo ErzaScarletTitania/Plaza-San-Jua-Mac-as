@@ -17,6 +17,27 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL) || $password === '') {
 }
 
 $admin = find_admin_by_email($email);
+
+if (!$admin || !verify_secret_custom($password, (string) ($admin['passwordHash'] ?? ''))) {
+    foreach (load_admins() as $storedAdmin) {
+        if (!is_array($storedAdmin)) {
+            continue;
+        }
+
+        if (normalize_email((string) ($storedAdmin['email'] ?? '')) !== $email) {
+            continue;
+        }
+
+        if (!verify_secret_custom($password, (string) ($storedAdmin['passwordHash'] ?? ''))) {
+            continue;
+        }
+
+        replace_admin($storedAdmin);
+        $admin = $storedAdmin;
+        break;
+    }
+}
+
 if (!$admin || !verify_secret_custom($password, (string) ($admin['passwordHash'] ?? ''))) {
     send_json(['ok' => false, 'message' => 'Credenciales de administracion invalidas.'], 401);
 }
