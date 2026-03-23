@@ -83,7 +83,7 @@ jobs:
           test -f deploy/index.html
           test -f deploy/.htaccess
           test -f deploy/checkout/index.html
-          test -f deploy/assets/payment/yape-qr.svg
+          test -f deploy/assets/payment/yape-qr.jpeg
           test -f deploy/storage/admin/admins.json
           test -f deploy/api/_runtime-config.php
 

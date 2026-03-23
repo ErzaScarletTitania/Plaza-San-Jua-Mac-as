@@ -8,7 +8,7 @@
     "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
     "db:export-sql": "node scripts/export-json-to-mysql.mjs",
     "db:sync:mysql": "node scripts/sync-json-to-mysql.mjs",
-    "build": "node scripts/build-catalog.mjs && node scripts/generate-yape-qr.mjs",
+    "build": "node scripts/build-catalog.mjs",
     "prepare:deploy": "node scripts/prepare-deploy.mjs",
     "test": "vitest run --pool=threads --maxWorkers=1",
     "verify": "npm run prepare:deploy && npm run test"
