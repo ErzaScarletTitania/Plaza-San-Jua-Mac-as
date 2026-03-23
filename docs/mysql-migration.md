@@ -6,6 +6,7 @@ Esta aplicacion hoy funciona con almacenamiento JSON en `storage/`, pero ya tien
 
 - Esquema: `database/mysql/schema.sql`
 - Exportador de datos desde JSON: `scripts/export-json-to-mysql.mjs`
+- Sincronizador directo a MySQL: `scripts/sync-json-to-mysql.mjs`
 - Helper PDO para PHP: `api/_database.php`
 
 ## Credenciales esperadas
@@ -30,7 +31,12 @@ Configura estos valores en el entorno PHP cuando hagamos el cambio de runtime:
 npm run db:export-sql
 ```
 
-5. Importar `database/mysql/import-from-json.sql` en phpMyAdmin.
+5. O sincronizar directo desde Node hacia InfinityFree:
+
+```bash
+npm run db:sync:mysql
+```
+
 6. Probar lectura de usuarios, admins y pedidos.
 7. Cambiar los endpoints PHP desde JSON a PDO/MySQL por bloques.
 
@@ -46,4 +52,4 @@ npm run db:export-sql
 
 ## Estado actual
 
-Todavia no se ha reemplazado la capa JSON en produccion. El helper PDO y el esquema quedan listos para la siguiente etapa.
+La aplicacion ya puede leer runtime config desde `api/_runtime-config.php` y sincronizar el esquema/datos base hacia MySQL. La promocion final a produccion depende de que GitHub Actions tenga cargados los secretos `DB_*`.

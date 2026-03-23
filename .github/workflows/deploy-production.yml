@@ -68,6 +68,16 @@ jobs:
           ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
         run: node scripts/bootstrap-admin.mjs --target-root ./deploy
 
+      - name: Provision MySQL runtime config into production artifact
+        env:
+          DB_HOST: ${{ secrets.DB_HOST }}
+          DB_PORT: ${{ secrets.DB_PORT }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_CHARSET: utf8mb4
+        run: node scripts/render-runtime-config.mjs --target-root ./deploy
+
       - name: Validate production deploy artifact
         run: |
           test -f deploy/index.html
@@ -75,6 +85,7 @@ jobs:
           test -f deploy/checkout/index.html
           test -f deploy/assets/payment/yape-qr.svg
           test -f deploy/storage/admin/admins.json
+          test -f deploy/api/_runtime-config.php
 
       - name: Publish to production via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
