@@ -9,33 +9,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 $admin = require_logged_in_admin();
-$storageDir = storage_path('orders');
-$files = is_dir($storageDir) ? (glob($storageDir . DIRECTORY_SEPARATOR . '*.json') ?: []) : [];
-$orders = [];
-
-foreach ($files as $file) {
-    $order = read_json_file($file);
-    if ($order === []) {
-        continue;
-    }
-
-    $orders[] = [
-        'orderId' => (string) ($order['orderId'] ?? ''),
-        'savedAt' => (string) ($order['savedAt'] ?? ''),
-        'total' => (float) ($order['total'] ?? 0),
-        'status' => (string) ($order['status'] ?? 'pending_payment_review'),
-        'statusLabel' => (string) ($order['statusLabel'] ?? 'Pendiente de revision'),
-        'paymentMethod' => (string) ($order['customer']['paymentMethod'] ?? ''),
-        'customerName' => (string) ($order['customer']['fullName'] ?? ''),
-        'district' => (string) ($order['customer']['district'] ?? ''),
-        'itemCount' => count($order['items'] ?? []),
-    ];
-}
-
-usort(
-    $orders,
-    static fn (array $left, array $right): int => strcmp((string) ($right['savedAt'] ?? ''), (string) ($left['savedAt'] ?? ''))
-);
+$orders = list_all_orders();
 
 $totalRevenue = array_reduce(
     $orders,
