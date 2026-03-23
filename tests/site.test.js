@@ -303,6 +303,19 @@ describe("seo and runtime packaging regressions", () => {
     expect(productionWorkflow).toContain("group: deploy-production");
     expect(productionWorkflow).toContain("cancel-in-progress: true");
   });
+
+  test("mysql migration foundation files exist", () => {
+    const files = [
+      "api/_database.php",
+      "database/mysql/schema.sql",
+      "docs/mysql-migration.md",
+      "scripts/export-json-to-mysql.mjs",
+    ];
+
+    for (const file of files) {
+      expect(exists(file)).toBe(true);
+    }
+  });
 });
 
 describe("backend and account utilities", () => {
@@ -346,6 +359,40 @@ describe("backend and account utilities", () => {
     expect(bootstrapSource).toContain("sha256$");
     expect(bootstrapSource).toContain("env.ADMIN_EMAIL");
     expect(bootstrapSource).toContain("--target-root");
+  });
+
+  test("mysql export script is available in package scripts", () => {
+    const pkg = parseJson("package.json");
+    const exporter = read("scripts/export-json-to-mysql.mjs");
+
+    expect(pkg.scripts["db:export-sql"]).toBe("node scripts/export-json-to-mysql.mjs");
+    expect(exporter).toContain("import-from-json.sql");
+    expect(exporter).toContain("INSERT INTO users");
+    expect(exporter).toContain("INSERT INTO orders");
+    expect(exporter).toContain("INSERT INTO admins");
+  });
+
+  test("mysql schema defines the expected ecommerce tables", () => {
+    const schema = read("database/mysql/schema.sql");
+
+    expect(schema).toContain("CREATE TABLE IF NOT EXISTS users");
+    expect(schema).toContain("CREATE TABLE IF NOT EXISTS user_addresses");
+    expect(schema).toContain("CREATE TABLE IF NOT EXISTS admins");
+    expect(schema).toContain("CREATE TABLE IF NOT EXISTS orders");
+    expect(schema).toContain("CREATE TABLE IF NOT EXISTS order_items");
+    expect(schema).toContain("CREATE TABLE IF NOT EXISTS payments");
+    expect(schema).toContain("CREATE TABLE IF NOT EXISTS audit_logs");
+  });
+
+  test("php database helper reads mysql env configuration", () => {
+    const helper = read("api/_database.php");
+
+    expect(helper).toContain("DB_HOST");
+    expect(helper).toContain("DB_PORT");
+    expect(helper).toContain("DB_NAME");
+    expect(helper).toContain("DB_USER");
+    expect(helper).toContain("DB_PASSWORD");
+    expect(helper).toContain("new PDO");
   });
 
   test("admin bootstrap script can provision an admin file into a target deploy directory", () => {
