@@ -10,5 +10,7 @@
   <path d="M362 168L402 128H448V168H362Z" fill="#FFCA28"/>
   <path d="M450 118C466 124 478 135 485 152" stroke="#1D8C5C" stroke-width="10" stroke-linecap="round"/>
   <circle cx="82" cy="86" r="42" fill="#1D8C5C" fill-opacity="0.18"/>
-  <text x="58" y="326" fill="#124D37" font-size="34" font-family="Trebuchet MS, sans-serif" font-weight="700">Delivery que llega con ritmo</text>
+  <circle cx="470" cy="80" r="16" fill="#FFCA28" fill-opacity="0.55"/>
+  <rect x="104" y="64" width="92" height="18" rx="9" fill="#005E9A" fill-opacity="0.18"/>
+  <rect x="214" y="64" width="120" height="18" rx="9" fill="#D8342B" fill-opacity="0.18"/>
 </svg>
