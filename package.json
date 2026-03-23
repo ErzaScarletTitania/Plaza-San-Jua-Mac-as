@@ -7,6 +7,7 @@
     "fetch:catalog": "node scripts/fetch-category-listings.mjs",
     "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
     "db:export-sql": "node scripts/export-json-to-mysql.mjs",
+    "db:sync:mysql": "node scripts/sync-json-to-mysql.mjs",
     "build": "node scripts/build-catalog.mjs && node scripts/generate-yape-qr.mjs",
     "prepare:deploy": "node scripts/prepare-deploy.mjs",
     "test": "vitest run --pool=threads --maxWorkers=1",
@@ -25,6 +26,7 @@
   },
   "homepage": "https://github.com/ErzaScarletTitania/Plaza-San-Jua-Mac-as#readme",
   "dependencies": {
+    "mysql2": "^3.20.0",
     "qrcode": "^1.5.4"
   },
   "devDependencies": {

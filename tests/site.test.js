@@ -12,6 +12,7 @@ import {
   validateRegisterInput,
 } from "../scripts/account-utils.js";
 import { provisionAdminFile } from "../scripts/bootstrap-admin.mjs";
+import { renderRuntimeConfig } from "../scripts/render-runtime-config.mjs";
 
 const repoRoot = process.cwd();
 const deployRoot = path.join(repoRoot, "deploy");
@@ -290,6 +291,14 @@ describe("seo and runtime packaging regressions", () => {
       expect(workflow).toContain("test -f deploy/assets/payment/yape-qr.svg");
       expect(workflow).toContain("test -f deploy/storage/admin/admins.json");
     }
+
+    expect(productionWorkflow).toContain("Provision MySQL runtime config into production artifact");
+    expect(productionWorkflow).toContain("node scripts/render-runtime-config.mjs --target-root ./deploy");
+    expect(productionWorkflow).toContain("DB_HOST: ${{ secrets.DB_HOST }}");
+    expect(productionWorkflow).toContain("DB_NAME: ${{ secrets.DB_NAME }}");
+    expect(productionWorkflow).toContain("DB_USER: ${{ secrets.DB_USER }}");
+    expect(productionWorkflow).toContain("DB_PASSWORD: ${{ secrets.DB_PASSWORD }}");
+    expect(productionWorkflow).toContain("test -f deploy/api/_runtime-config.php");
   });
 
   test("ci and deploy workflows enforce serialized runs per target branch", () => {
@@ -307,9 +316,12 @@ describe("seo and runtime packaging regressions", () => {
   test("mysql migration foundation files exist", () => {
     const files = [
       "api/_database.php",
+      "api/_mysql_schema.php",
+      "api/admin/migrate-mysql.php",
       "database/mysql/schema.sql",
       "docs/mysql-migration.md",
       "scripts/export-json-to-mysql.mjs",
+      "scripts/render-runtime-config.mjs",
     ];
 
     for (const file of files) {
@@ -372,6 +384,18 @@ describe("backend and account utilities", () => {
     expect(exporter).toContain("INSERT INTO admins");
   });
 
+  test("mysql sync script is available in package scripts", () => {
+    const pkg = parseJson("package.json");
+    const syncScript = read("scripts/sync-json-to-mysql.mjs");
+
+    expect(pkg.scripts["db:sync:mysql"]).toBe("node scripts/sync-json-to-mysql.mjs");
+    expect(syncScript).toContain('mysql2/promise');
+    expect(syncScript).toContain("schema.sql");
+    expect(syncScript).toContain("import-from-json.sql");
+    expect(syncScript).toContain("ADMIN_EMAIL");
+    expect(syncScript).toContain("INSERT INTO admins");
+  });
+
   test("mysql schema defines the expected ecommerce tables", () => {
     const schema = read("database/mysql/schema.sql");
 
@@ -387,12 +411,49 @@ describe("backend and account utilities", () => {
   test("php database helper reads mysql env configuration", () => {
     const helper = read("api/_database.php");
 
+    expect(helper).toContain("_runtime-config.php");
+    expect(helper).toContain("runtime_config()");
     expect(helper).toContain("DB_HOST");
     expect(helper).toContain("DB_PORT");
     expect(helper).toContain("DB_NAME");
     expect(helper).toContain("DB_USER");
     expect(helper).toContain("DB_PASSWORD");
     expect(helper).toContain("new PDO");
+  });
+
+  test("server-side mysql migration endpoint is protected behind admin auth", () => {
+    const schemaHelper = read("api/_mysql_schema.php");
+    const migrationEndpoint = read("api/admin/migrate-mysql.php");
+
+    expect(schemaHelper).toContain("CREATE TABLE IF NOT EXISTS users");
+    expect(schemaHelper).toContain("CREATE TABLE IF NOT EXISTS orders");
+    expect(migrationEndpoint).toContain("require_logged_in_admin()");
+    expect(migrationEndpoint).toContain("db_is_configured()");
+    expect(migrationEndpoint).toContain("mysql_schema_sql()");
+    expect(migrationEndpoint).toContain("persist_order(");
+  });
+
+  test("runtime config renderer can provision mysql credentials into a target deploy directory", async () => {
+    const tempRoot = fs.mkdtempSync(path.join(os.tmpdir(), "psjm-runtime-"));
+    const targetRoot = path.join(tempRoot, "deploy");
+
+    await renderRuntimeConfig({
+      targetRoot,
+      dbHost: "sql110.infinityfree.com",
+      dbPort: "3306",
+      dbName: "if0_41165587_san_juan_macias",
+      dbUser: "if0_41165587",
+      dbPassword: "feZQuGJeav",
+      dbCharset: "utf8mb4",
+    });
+
+    const created = fs.readFileSync(path.join(targetRoot, "api", "_runtime-config.php"), "utf8");
+    expect(created).toContain("'DB_HOST' => \"sql110.infinityfree.com\"");
+    expect(created).toContain("'DB_PORT' => \"3306\"");
+    expect(created).toContain("'DB_NAME' => \"if0_41165587_san_juan_macias\"");
+    expect(created).toContain("'DB_USER' => \"if0_41165587\"");
+    expect(created).toContain("'DB_PASSWORD' => \"feZQuGJeav\"");
+    expect(created).toContain("'DB_CHARSET' => \"utf8mb4\"");
   });
 
   test("admin bootstrap script can provision an admin file into a target deploy directory", () => {
