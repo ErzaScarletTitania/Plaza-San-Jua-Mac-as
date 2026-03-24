@@ -172,7 +172,7 @@ function renderHeader(prefix) {
         </form>
         <nav class="header-actions">
           <a class="header-chip" href="${prefix}categorias/">Categorías</a>
-          <a class="header-chip" href="${prefix}reparto/">Reparto</a>
+          <a class="header-chip" href="${prefix}reparto/">Delivery</a>
           <a class="header-chip" data-account-link href="${prefix}cuenta/">
             <span data-session-chip>Mi cuenta</span>
           </a>
@@ -192,7 +192,7 @@ function renderFooter(prefix) {
         <div>
           <img class="footer-logo" src="${prefix}assets/brand/logo-plaza-san-juan-macias.svg" alt="${brand.name}" />
           <p class="muted">
-            Delivery con sazón local para ${brand.serviceArea}. Pedido mínimo de S/ ${brand.minimumOrderPen.toFixed(2)} y cero recojo en tienda.
+            Delivery con sazón local para ${brand.serviceArea}. Pedido mínimo de S/ ${brand.minimumOrderPen.toFixed(2)} y delivery fijo de S/ ${brand.deliveryFeePen.toFixed(2)}.
           </p>
         </div>
         <div>
@@ -203,7 +203,7 @@ function renderFooter(prefix) {
         </div>
         <div>
           <strong>Servicio</strong>
-          <p><a href="${prefix}reparto/">Zonas y reparto</a></p>
+          <p><a href="${prefix}reparto/">Zonas y delivery</a></p>
           <p><a href="https://wa.me/${brand.whatsapp}">WhatsApp</a></p>
           <p><a href="mailto:${brand.email}">Correo</a></p>
         </div>

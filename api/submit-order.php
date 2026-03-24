@@ -22,6 +22,7 @@ $customer = is_array($payload['customer'] ?? null) ? $payload['customer'] : [];
 $items = is_array($payload['items'] ?? null) ? $payload['items'] : [];
 $allowedPaymentMethods = ['Yape', 'BCP', 'PayPal', 'Binance USDT BEP20'];
 $minimumOrder = 50;
+$deliveryFee = 5.0;
 
 if (normalize_text((string) ($customer['fullName'] ?? '')) === '' || empty($items)) {
     send_json(['ok' => false, 'message' => 'Pedido invalido.'], 422);
@@ -33,7 +34,7 @@ if (!in_array($paymentMethod, $allowedPaymentMethods, true)) {
 }
 
 $normalizedItems = [];
-$computedTotal = 0.0;
+$computedSubtotal = 0.0;
 foreach ($items as $item) {
     if (!is_array($item)) {
         continue;
@@ -54,17 +55,19 @@ foreach ($items as $item) {
         'price' => round($price, 2),
         'quantity' => $quantity,
     ];
-    $computedTotal += $price * $quantity;
+    $computedSubtotal += $price * $quantity;
 }
 
 if ($normalizedItems === []) {
     send_json(['ok' => false, 'message' => 'Tu carrito no tiene productos validos.'], 422);
 }
 
-$computedTotal = round($computedTotal, 2);
-if ($computedTotal < $minimumOrder) {
+$computedSubtotal = round($computedSubtotal, 2);
+if ($computedSubtotal < $minimumOrder) {
     send_json(['ok' => false, 'message' => 'El pedido minimo para delivery es S/ 50.00.'], 422);
 }
+
+$computedTotal = round($computedSubtotal + $deliveryFee, 2);
 
 $orderId = 'PSJM-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(4)), 0, 8);
 $order = [
@@ -75,6 +78,8 @@ $order = [
     'createdAt' => (string) ($payload['createdAt'] ?? date(DATE_ATOM)),
     'currency' => 'PEN',
     'minimumOrder' => $minimumOrder,
+    'subtotal' => $computedSubtotal,
+    'deliveryFee' => $deliveryFee,
     'total' => $computedTotal,
     'customer' => [
         'fullName' => normalize_text((string) ($customer['fullName'] ?? '')),

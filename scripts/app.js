@@ -191,12 +191,21 @@ function syncCartCount() {
 function hydrateAddToCartButtons() {
   document.querySelectorAll("[data-add-to-cart]").forEach((button) => {
     button.onclick = () => {
+      if (button.dataset.adding === "1") {
+        return;
+      }
+      button.dataset.adding = "1";
+      button.disabled = true;
       addToCart({
         id: button.dataset.productId,
         name: button.dataset.productName,
         image: button.dataset.productImage,
         price: button.dataset.productPrice,
       });
+      window.setTimeout(() => {
+        button.dataset.adding = "0";
+        button.disabled = false;
+      }, 400);
     };
   });
 }
@@ -349,8 +358,10 @@ function renderCheckout(user) {
   }
 
   const cart = getCart();
-  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const minimumReached = total >= brand.minimumOrderPen;
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const deliveryFee = cart.length ? brand.deliveryFeePen : 0;
+  const total = subtotal + deliveryFee;
+  const minimumReached = subtotal >= brand.minimumOrderPen;
 
   container.innerHTML = cart.length
     ? cart.map(checkoutItem).join("")
@@ -361,11 +372,21 @@ function renderCheckout(user) {
     totalNode.textContent = money.format(total);
   }
 
+  const subtotalNode = document.querySelector("[data-checkout-subtotal]");
+  if (subtotalNode) {
+    subtotalNode.textContent = money.format(subtotal);
+  }
+
+  const deliveryNode = document.querySelector("[data-checkout-delivery]");
+  if (deliveryNode) {
+    deliveryNode.textContent = money.format(deliveryFee);
+  }
+
   const minimumNode = document.querySelector("[data-checkout-minimum]");
   if (minimumNode) {
     minimumNode.textContent = minimumReached
-      ? `Pedido mínimo alcanzado: ${money.format(total)}.`
-      : `Te faltan ${money.format(brand.minimumOrderPen - total)} para llegar al mínimo de ${money.format(brand.minimumOrderPen)}.`;
+      ? `Pedido mínimo alcanzado: ${money.format(subtotal)} en productos.`
+      : `Te faltan ${money.format(brand.minimumOrderPen - subtotal)} para llegar al mínimo de ${money.format(brand.minimumOrderPen)}.`;
     minimumNode.dataset.state = minimumReached ? "ok" : "error";
   }
 
@@ -412,6 +433,8 @@ function renderCheckout(user) {
           }
         : null,
       items: cart,
+      subtotal: Number(subtotal.toFixed(2)),
+      deliveryFee: Number(deliveryFee.toFixed(2)),
       total: Number(total.toFixed(2)),
       currency: brand.currency,
       minimumOrder: brand.minimumOrderPen,

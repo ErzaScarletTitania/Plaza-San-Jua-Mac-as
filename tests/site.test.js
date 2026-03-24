@@ -91,6 +91,14 @@ describe("public storefront regression coverage", () => {
     expect(links).not.toContain("./producto/");
   });
 
+  test("public UI labels use Delivery wording instead of Reparto", () => {
+    for (const file of publicHtmlFiles) {
+      const html = read(file);
+      expect(html).not.toContain(">Reparto<");
+      expect(html).not.toContain("Zonas y reparto");
+    }
+  });
+
   test("checkout limits payment methods to the four approved options", () => {
     const dom = domFrom("deploy/checkout/index.html");
     const options = [...dom.window.document.querySelectorAll("option")]
@@ -114,11 +122,14 @@ describe("public storefront regression coverage", () => {
       .join(" ");
 
     expect(html).toContain("S/ 50.00");
+    expect(html).toContain("Delivery fijo");
     expect(html).toContain("Solo delivery, sin recojo");
     expect(badgeAlts).toContain("Yape");
     expect(badgeAlts).toContain("BCP");
     expect(badgeAlts).toContain("PayPal");
     expect(badgeAlts).toContain("Binance");
+    expect(html).toContain("data-checkout-subtotal");
+    expect(html).toContain("data-checkout-delivery");
   });
 
   test("account and profile keep login, social buttons and delivery fields", () => {
@@ -274,20 +285,26 @@ describe("seo and runtime packaging regressions", () => {
     expect(css).toContain(".product-grid");
     expect(css).toContain(".checkout-layout");
     expect(css).toContain("height: 240px;");
-    expect(css).toContain("max-width: 22ch;");
+    expect(css).toContain("overflow: hidden;");
+    expect(css).toContain("max-width: 26ch;");
     expect(css).toContain("max-height: 280px;");
     expect(css).toContain("padding: 28px 176px 28px 28px;");
     expect(css).toContain("width: min(28%, 140px);");
     expect(css).toContain("max-height: 110px;");
+    expect(css).toContain("grid-template-columns: repeat(2, minmax(0, 118px));");
+    expect(css).toContain("overflow-wrap: anywhere;");
+    expect(css).toContain(".admin-dashboard .section-heading");
   });
 
   test("yape assets use the provided fixed logo and qr files", () => {
     const pkg = parseJson("package.json");
     const checkoutHtml = read("deploy/checkout/index.html");
+    const publicHtml = publicHtmlFiles.map((file) => read(file)).join("\n");
 
     expect(pkg.scripts.build).toBe("node scripts/build-catalog.mjs");
     expect(checkoutHtml).toContain("../assets/payment/yape-badge.png");
     expect(checkoutHtml).toContain("../assets/payment/yape-qr.jpeg");
+    expect(publicHtml).not.toContain("yape-badge.svg");
   });
 
   test("category promo artwork no longer contains cropped text inside the svg", () => {
@@ -303,9 +320,15 @@ describe("seo and runtime packaging regressions", () => {
 
   test("delivery page includes the expanded covered areas", () => {
     const repartoHtml = read("deploy/reparto/index.html");
+    const homeHtml = read("deploy/index.html");
+    const categoryHtml = read("deploy/categorias/gaseosas-aguas-y-jugos/index.html");
 
     expect(repartoHtml).toContain("200 Millas");
     expect(repartoHtml).toContain("Los Portales del Aeropuerto");
+    expect(homeHtml).toContain("200 Millas");
+    expect(homeHtml).toContain("Los Portales del Aeropuerto");
+    expect(categoryHtml).toContain("200 Millas");
+    expect(categoryHtml).toContain("Los Portales del Aeropuerto");
   });
 
   test("deploy workflows preserve hidden files and validate artifacts before FTP publish", () => {
@@ -660,6 +683,91 @@ describe("frontend runtime regressions", () => {
       expect(cart).toHaveLength(1);
       expect(cart[0].quantity).toBe(1);
       expect(cartCount.textContent).toBe("1");
+    } finally {
+      Object.assign(globalThis, previousGlobals);
+      dom.window.close();
+    }
+  });
+
+  test("rapid duplicate add events are throttled so one user action does not add twice", async () => {
+    const dom = new JSDOM(
+      `<!doctype html><html data-root-prefix="./"><body><span data-cart-count>0</span><div data-home-featured-products></div></body></html>`,
+      { url: "https://example.com/" },
+    );
+
+    const previousGlobals = {
+      window: globalThis.window,
+      document: globalThis.document,
+      localStorage: globalThis.localStorage,
+      FormData: globalThis.FormData,
+      URLSearchParams: globalThis.URLSearchParams,
+      fetch: globalThis.fetch,
+    };
+
+    Object.assign(globalThis, {
+      window: dom.window,
+      document: dom.window.document,
+      localStorage: dom.window.localStorage,
+      FormData: dom.window.FormData,
+      URLSearchParams: dom.window.URLSearchParams,
+      fetch: async (url) => {
+        const href = String(url);
+
+        if (href.endsWith("api/auth/me.php")) {
+          return {
+            ok: false,
+            json: async () => ({ message: "Sin sesión activa." }),
+          };
+        }
+
+        if (href.endsWith("data/homepage.json")) {
+          return {
+            ok: true,
+            json: async () => ({
+              categories: [],
+              featuredProducts: [
+                {
+                  id: "prd-cisne",
+                  name: "Colchon Cisne Clasico",
+                  image: "https://example.com/cisne.jpg",
+                  categoryName: "Dormitorio",
+                  brand: "Cisne",
+                  price: {
+                    current: 199.9,
+                    compareAt: null,
+                  },
+                },
+              ],
+            }),
+          };
+        }
+
+        if (href.endsWith("data/catalog-summary.json")) {
+          return {
+            ok: true,
+            json: async () => ({
+              categories: [],
+              products: [],
+            }),
+          };
+        }
+
+        throw new Error(`Unexpected fetch: ${href}`);
+      },
+    });
+
+    try {
+      const appUrl = `${pathToFileURL(path.join(repoRoot, "scripts", "app.js")).href}?runtime-test-throttle=${Date.now()}`;
+      await import(appUrl);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const button = dom.window.document.querySelector("[data-add-to-cart]");
+      button.click();
+      button.click();
+
+      const cart = JSON.parse(dom.window.localStorage.getItem("plaza-cart"));
+      expect(cart).toHaveLength(1);
+      expect(cart[0].quantity).toBe(1);
     } finally {
       Object.assign(globalThis, previousGlobals);
       dom.window.close();
