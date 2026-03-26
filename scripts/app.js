@@ -119,6 +119,10 @@ function productCardMarkup(product) {
   const compare = product.price.compareAt
     ? `<span>${money.format(product.price.compareAt)}</span>`
     : "";
+  const variantText = product.variantLabel || (product.requiresVariantSelection ? "Requiere talla" : "");
+  const variantLabel = variantText
+    ? `<p class="product-card__variant">${repairText(variantText)}</p>`
+    : "";
   return `
     <article class="product-card">
       <div class="product-card__image">
@@ -128,6 +132,7 @@ function productCardMarkup(product) {
         <p class="product-card__category">${repairText(product.categoryName)}</p>
         <h3>${repairText(product.name)}</h3>
         <p class="product-card__brand">${repairText(product.brand)}</p>
+        ${variantLabel}
         <div class="price-block">
           <strong>${money.format(product.price.current)}</strong>
           ${compare}
@@ -141,6 +146,10 @@ function productCardMarkup(product) {
             data-product-name="${repairText(product.name)}"
             data-product-image="${product.image}"
             data-product-price="${product.price.current}"
+            data-product-variant-id="${product.variantId ?? ""}"
+            data-product-variant-label="${repairText(product.variantLabel ?? "")}"
+            data-product-variant-type="${product.variantType ?? "default"}"
+            data-product-requires-variant="${product.requiresVariantSelection ? "1" : "0"}"
           >
             Agregar
           </button>
@@ -164,20 +173,53 @@ function setCart(items) {
   syncCartCount();
 }
 
+function cartItemKey(product) {
+  return [product.id, product.variantId || "default"].join("::");
+}
+
 function addToCart(product) {
   const cart = getCart();
-  const existing = cart.find((item) => item.id === product.id);
+  const key = cartItemKey(product);
+  const existing = cart.find((item) => cartItemKey(item) === key);
   if (existing) {
     existing.quantity += 1;
   } else {
     cart.push({
       id: product.id,
+      key,
       name: product.name,
       image: product.image,
       price: Number(product.price),
+      variantId: product.variantId || "",
+      variantLabel: product.variantLabel || "",
+      variantType: product.variantType || "default",
+      requiresVariantSelection: Boolean(product.requiresVariantSelection),
       quantity: 1,
     });
   }
+  setCart(cart);
+}
+
+function updateCartItemQuantity(key, quantity) {
+  const nextQuantity = Math.max(0, Number(quantity) || 0);
+  const cart = getCart()
+    .map((item) => ({ ...item, key: item.key || cartItemKey(item) }))
+    .filter((item) => item.key !== key || nextQuantity > 0)
+    .map((item) =>
+      item.key === key
+        ? {
+            ...item,
+            quantity: nextQuantity,
+          }
+        : item,
+    );
+  setCart(cart);
+}
+
+function removeCartItem(key) {
+  const cart = getCart()
+    .map((item) => ({ ...item, key: item.key || cartItemKey(item) }))
+    .filter((item) => item.key !== key);
   setCart(cart);
 }
 
@@ -201,6 +243,10 @@ function hydrateAddToCartButtons() {
         name: button.dataset.productName,
         image: button.dataset.productImage,
         price: button.dataset.productPrice,
+        variantId: button.dataset.productVariantId,
+        variantLabel: button.dataset.productVariantLabel,
+        variantType: button.dataset.productVariantType,
+        requiresVariantSelection: button.dataset.productRequiresVariant === "1",
       });
       window.setTimeout(() => {
         button.dataset.adding = "0";
@@ -321,12 +367,22 @@ async function renderCatalogPage() {
 }
 
 function checkoutItem(item) {
+  const variantText = item.variantLabel || (item.requiresVariantSelection ? "Talla pendiente" : "");
+  const variantBlock = variantText
+    ? `<p class="checkout-item__variant">${variantText}</p>`
+    : "";
   return `
-    <li class="checkout-item">
+    <li class="checkout-item" data-cart-item-key="${item.key || cartItemKey(item)}">
       <img src="${item.image}" alt="${item.name}" />
       <div>
         <strong>${item.name}</strong>
-        <p>Cantidad: ${item.quantity}</p>
+        ${variantBlock}
+        <div class="quantity-controls">
+          <button type="button" class="quantity-button" data-decrease-qty data-cart-item-key="${item.key || cartItemKey(item)}">-</button>
+          <span>Cantidad: ${item.quantity}</span>
+          <button type="button" class="quantity-button" data-increase-qty data-cart-item-key="${item.key || cartItemKey(item)}">+</button>
+          <button type="button" class="button button--ghost button--compact" data-remove-item data-cart-item-key="${item.key || cartItemKey(item)}">Quitar</button>
+        </div>
       </div>
       <span>${money.format(item.price * item.quantity)}</span>
     </li>
@@ -366,6 +422,37 @@ function renderCheckout(user) {
   container.innerHTML = cart.length
     ? cart.map(checkoutItem).join("")
     : '<li class="checkout-empty">Tu carrito está vacío. Llénalo primero y luego cae a pagar.</li>';
+
+  container.querySelectorAll("[data-decrease-qty]").forEach((button) => {
+    button.onclick = () => {
+      const key = button.dataset.cartItemKey;
+      const item = getCart().find((entry) => (entry.key || cartItemKey(entry)) === key);
+      if (!item) {
+        return;
+      }
+      updateCartItemQuantity(key, item.quantity - 1);
+      renderCheckout(user);
+    };
+  });
+
+  container.querySelectorAll("[data-increase-qty]").forEach((button) => {
+    button.onclick = () => {
+      const key = button.dataset.cartItemKey;
+      const item = getCart().find((entry) => (entry.key || cartItemKey(entry)) === key);
+      if (!item) {
+        return;
+      }
+      updateCartItemQuantity(key, item.quantity + 1);
+      renderCheckout(user);
+    };
+  });
+
+  container.querySelectorAll("[data-remove-item]").forEach((button) => {
+    button.onclick = () => {
+      removeCartItem(button.dataset.cartItemKey);
+      renderCheckout(user);
+    };
+  });
 
   const totalNode = document.querySelector("[data-checkout-total]");
   if (totalNode) {

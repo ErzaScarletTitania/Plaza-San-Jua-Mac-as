@@ -168,7 +168,23 @@ describe("catalog and category regressions", () => {
       expect(product.price.current).toBe(Number(product.price.current.toFixed(2)));
       expect(hasBlockedCategory(product.categoryName)).toBe(false);
       expect(hasBlockedProduct(product.name)).toBe(false);
+      expect(Object.hasOwn(product, "variantId")).toBe(true);
+      expect(Object.hasOwn(product, "variantType")).toBe(true);
+      expect(Object.hasOwn(product, "variantLabel")).toBe(true);
+      expect(Object.hasOwn(product, "requiresVariantSelection")).toBe(true);
+      expect(Array.isArray(product.variantOptions)).toBe(true);
     }
+  });
+
+  test("catalog summary flags size-sensitive products for future variant selection", () => {
+    const payload = parseJson("deploy/data/catalog-summary.json");
+    const sizeProducts = payload.products.filter(
+      (product) => product.variantType === "size" && product.requiresVariantSelection,
+    );
+    const categories = new Set(sizeProducts.map((product) => product.categoryName));
+
+    expect(sizeProducts.length).toBeGreaterThan(10);
+    expect([...categories].every((name) => /vestuario|calzado/i.test(name))).toBe(true);
   });
 
   test("critical generated categories are not empty and keep add-to-cart actions", () => {
@@ -302,6 +318,7 @@ describe("seo and runtime packaging regressions", () => {
     const publicHtml = publicHtmlFiles.map((file) => read(file)).join("\n");
 
     expect(pkg.scripts.build).toBe("node scripts/build-catalog.mjs");
+    expect(pkg.scripts.verify).toBe("npm run build && npm run prepare:deploy && npm run test");
     expect(checkoutHtml).toContain("../assets/payment/yape-badge.png");
     expect(checkoutHtml).toContain("../assets/payment/yape-qr.jpeg");
     expect(publicHtml).not.toContain("yape-badge.svg");
@@ -432,6 +449,19 @@ describe("backend and account utilities", () => {
     expect(adminPhp).toContain("Content-Type: text/html; charset=utf-8");
     expect(adminPhp).toContain("load_admins()");
     expect(adminPhp).toContain("replace_admin($storedAdmin)");
+    expect(adminPhp).toContain("update_order_status(");
+    expect(adminPhp).toContain("name=\"action\" value=\"update-order-status\"");
+    expect(adminPhp).toContain("Detalle de pedido");
+    expect(adminPhp).toContain("Detalle de cliente");
+  });
+
+  test("admin orders endpoint supports listing and status updates", () => {
+    const endpoint = read("api/admin/orders.php");
+
+    expect(endpoint).toContain("$_SERVER['REQUEST_METHOD'] === 'POST'");
+    expect(endpoint).toContain("decode_json_request()");
+    expect(endpoint).toContain("update_order_status($orderId, $status");
+    expect(endpoint).toContain("$_SERVER['REQUEST_METHOD'] === 'GET'");
   });
 
   test("admin bootstrap script is available in package scripts", () => {
@@ -505,12 +535,35 @@ describe("backend and account utilities", () => {
     expect(migrationEndpoint).toContain("persist_order(");
   });
 
+  test("auth helper exposes order detail and admin status update primitives", () => {
+    const helper = read("api/_auth.php");
+
+    expect(helper).toContain("function order_status_catalog(): array");
+    expect(helper).toContain("function find_order_by_id(string $orderId): ?array");
+    expect(helper).toContain("function update_order_status(string $orderId, string $statusCode, array $meta = []): ?array");
+    expect(helper).toContain("'out_for_delivery' => 'En camino'");
+    expect(helper).toContain("'delivered' => 'Entregado'");
+    expect(helper).toContain("'cancelled' => 'Cancelado'");
+  });
+
   test("admin login endpoint can recover from stale mysql admin hashes using local admin storage", () => {
     const loginEndpoint = read("api/admin/login.php");
 
     expect(loginEndpoint).toContain("foreach (load_admins() as $storedAdmin)");
     expect(loginEndpoint).toContain("replace_admin($storedAdmin);");
     expect(loginEndpoint).toContain("Credenciales de administracion invalidas.");
+  });
+
+  test("submit-order backend persists delivery fee totals and variant metadata", () => {
+    const endpoint = read("api/submit-order.php");
+
+    expect(endpoint).toContain("$deliveryFee = 5.0;");
+    expect(endpoint).toContain("'variantId' => normalize_text((string) ($item['variantId'] ?? ''))");
+    expect(endpoint).toContain("'variantLabel' => normalize_text((string) ($item['variantLabel'] ?? ''))");
+    expect(endpoint).toContain("'variantType' => normalize_text((string) ($item['variantType'] ?? ''))");
+    expect(endpoint).toContain("'subtotal' => $computedSubtotal");
+    expect(endpoint).toContain("'deliveryFee' => $deliveryFee");
+    expect(endpoint).toContain("'total' => $computedTotal");
   });
 
   test("runtime config renderer can provision mysql credentials into a target deploy directory", async () => {
@@ -689,6 +742,12 @@ describe("frontend runtime regressions", () => {
     }
   });
 
+  test("vestuario category exposes the pending size notice on size-sensitive products", () => {
+    const html = read("deploy/categorias/vestuario/index.html");
+
+    expect(html).toContain("Requiere talla");
+  });
+
   test("rapid duplicate add events are throttled so one user action does not add twice", async () => {
     const dom = new JSDOM(
       `<!doctype html><html data-root-prefix="./"><body><span data-cart-count>0</span><div data-home-featured-products></div></body></html>`,
@@ -768,6 +827,101 @@ describe("frontend runtime regressions", () => {
       const cart = JSON.parse(dom.window.localStorage.getItem("plaza-cart"));
       expect(cart).toHaveLength(1);
       expect(cart[0].quantity).toBe(1);
+    } finally {
+      Object.assign(globalThis, previousGlobals);
+      dom.window.close();
+    }
+  });
+
+  test("checkout quantity controls recalculate totals and can remove items", async () => {
+    const dom = new JSDOM(
+      `<!doctype html><html data-root-prefix="../"><body>
+        <span data-cart-count>0</span>
+        <p data-checkout-minimum></p>
+        <ul data-checkout-items></ul>
+        <strong data-checkout-subtotal></strong>
+        <strong data-checkout-delivery></strong>
+        <strong data-checkout-total></strong>
+        <form data-order-form><button type="submit">Registrar</button></form>
+        <p data-order-status></p>
+      </body></html>`,
+      { url: "https://example.com/checkout/" },
+    );
+
+    dom.window.localStorage.setItem(
+      "plaza-cart",
+      JSON.stringify([
+        {
+          id: "ropa-1",
+          key: "ropa-1::talla-m",
+          name: "Polo deportivo",
+          image: "https://example.com/polo.jpg",
+          price: 12,
+          variantId: "talla-m",
+          variantLabel: "Talla M",
+          variantType: "size",
+          requiresVariantSelection: true,
+          quantity: 1,
+        },
+      ]),
+    );
+
+    const previousGlobals = {
+      window: globalThis.window,
+      document: globalThis.document,
+      localStorage: globalThis.localStorage,
+      FormData: globalThis.FormData,
+      URLSearchParams: globalThis.URLSearchParams,
+      fetch: globalThis.fetch,
+    };
+
+    Object.assign(globalThis, {
+      window: dom.window,
+      document: dom.window.document,
+      localStorage: dom.window.localStorage,
+      FormData: dom.window.FormData,
+      URLSearchParams: dom.window.URLSearchParams,
+      fetch: async (url) => {
+        const href = String(url);
+
+        if (href.endsWith("api/auth/me.php")) {
+          return {
+            ok: false,
+            json: async () => ({ message: "Sin sesion activa." }),
+          };
+        }
+
+        throw new Error(`Unexpected fetch: ${href}`);
+      },
+    });
+
+    try {
+      const appUrl = `${pathToFileURL(path.join(repoRoot, "scripts", "app.js")).href}?runtime-test-checkout=${Date.now()}`;
+      await import(appUrl);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const subtotalNode = dom.window.document.querySelector("[data-checkout-subtotal]");
+      const deliveryNode = dom.window.document.querySelector("[data-checkout-delivery]");
+      const totalNode = dom.window.document.querySelector("[data-checkout-total]");
+
+      expect(dom.window.document.body.textContent).toContain("Talla M");
+      expect(subtotalNode.textContent).toContain("12.00");
+      expect(deliveryNode.textContent).toContain("5.00");
+      expect(totalNode.textContent).toContain("17.00");
+
+      dom.window.document.querySelector("[data-increase-qty]").click();
+      expect(JSON.parse(dom.window.localStorage.getItem("plaza-cart"))[0].quantity).toBe(2);
+      expect(subtotalNode.textContent).toContain("24.00");
+      expect(totalNode.textContent).toContain("29.00");
+
+      dom.window.document.querySelector("[data-decrease-qty]").click();
+      expect(JSON.parse(dom.window.localStorage.getItem("plaza-cart"))[0].quantity).toBe(1);
+      expect(totalNode.textContent).toContain("17.00");
+
+      dom.window.document.querySelector("[data-remove-item]").click();
+      expect(JSON.parse(dom.window.localStorage.getItem("plaza-cart"))).toEqual([]);
+      expect(totalNode.textContent).toContain("0.00");
+      expect(deliveryNode.textContent).toContain("0.00");
     } finally {
       Object.assign(globalThis, previousGlobals);
       dom.window.close();

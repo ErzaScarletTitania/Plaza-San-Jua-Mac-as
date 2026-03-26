@@ -123,6 +123,28 @@ function specMap(specs) {
   }));
 }
 
+function inferVariantProfile({ categories = [], name = "", specifications = [], variantId = "", sellerSkuId = "" }) {
+  const categoryTrail = categories.map((entry) => fixText(entry.name)).join(" ");
+  const sizeSensitive = /\bvestuario\b|\bcalzado\b/i.test(categoryTrail);
+
+  const explicitSizeSpec = specifications.find((item) =>
+    /\btalla\b|\bsize\b/i.test(fixText(item.name)),
+  );
+
+  const optionLabel = explicitSizeSpec ? `Talla ${fixText(explicitSizeSpec.value)}` : "";
+
+  return {
+    variantId: fixText(variantId),
+    sellerSkuId: fixText(sellerSkuId),
+    variantType: sizeSensitive ? "size" : "default",
+    variantLabel: optionLabel,
+    requiresVariantSelection: sizeSensitive,
+    variantOptions: explicitSizeSpec
+      ? [{ id: fixText(variantId || sellerSkuId), label: `Talla ${fixText(explicitSizeSpec.value)}` }]
+      : [],
+  };
+}
+
 function normalizeBrand(value) {
   const cleaned = fixText(value);
   return slugify(cleaned) === "tottus" ? brandName : cleaned;
@@ -164,16 +186,24 @@ function normalizeProduct(json) {
   const promoPrice = pickPrice(variant?.prices, "cmrPrice") ?? internetPrice;
   const basePrice = internetPrice ?? promoPrice ?? normalPrice ?? 0;
   const categories = normalizeCategories(product.breadCrumb);
+  const specifications = specMap(product.attributes?.specifications);
+  const variantProfile = inferVariantProfile({
+    categories,
+    name: product.name,
+    specifications,
+    variantId: variant?.id ?? product.primaryVariantId ?? "",
+    sellerSkuId: variant?.offerings?.[0]?.sellerSkuId ?? "",
+  });
 
   return {
     id: fixText(product.id),
-    variantId: fixText(variant?.id ?? product.primaryVariantId ?? ""),
+    variantId: variantProfile.variantId,
     slug: fixText(product.slug),
     name: normalizeTextWithBrand(product.name),
     brand: normalizeBrand(product.brandName),
     description: normalizeTextWithBrand(product.description),
     longDescription: normalizeTextWithBrand(product.longDescription),
-    sellerSkuId: fixText(variant?.offerings?.[0]?.sellerSkuId ?? ""),
+    sellerSkuId: variantProfile.sellerSkuId,
     sourceUrl: fixText(
       `https://www.tottus.com.pe/tottus-pe/articulo/${product.id}/${product.slug}/${variant?.id ?? product.primaryVariantId}`,
     ),
@@ -194,7 +224,11 @@ function normalizeProduct(json) {
       promoReference: promoPrice,
     },
     stock: variant?.availability?.some((item) => item.hasStock) ?? false,
-    specifications: specMap(product.attributes?.specifications),
+    specifications,
+    variantType: variantProfile.variantType,
+    variantLabel: variantProfile.variantLabel,
+    requiresVariantSelection: variantProfile.requiresVariantSelection,
+    variantOptions: variantProfile.variantOptions,
   };
 }
 
@@ -223,16 +257,43 @@ function normalizeListingProduct(result, category) {
   const promoPrice = pickPrice(result.prices, "cmrPrice") ?? internetPrice;
   const basePrice = internetPrice ?? promoPrice ?? normalPrice ?? 0;
   const description = inferDescription(result, category.name);
+  const specifications = [
+    ...(result.measurements?.format
+      ? [
+          {
+            id: "presentacion",
+            name: "Presentación",
+            value: fixText(result.measurements.format),
+          },
+        ]
+      : []),
+    ...(result.measurements?.limit
+      ? [
+          {
+            id: "limite",
+            name: "Límite",
+            value: fixText(result.measurements.limit),
+          },
+        ]
+      : []),
+  ];
+  const variantProfile = inferVariantProfile({
+    categories: [{ name: category.name }],
+    name: result.displayName,
+    specifications,
+    variantId: result.skuId ?? result.offeringId ?? "",
+    sellerSkuId: result.skuId ?? result.offeringId ?? "",
+  });
 
   return {
     id: fixText(result.productId),
-    variantId: fixText(result.skuId ?? result.offeringId ?? ""),
+    variantId: variantProfile.variantId,
     slug: fixText(result.url).split("/").filter(Boolean).at(-1) ?? "",
     name: normalizeTextWithBrand(result.displayName),
     brand: normalizeBrand(result.brand),
     description,
     longDescription: description,
-    sellerSkuId: fixText(result.skuId ?? result.offeringId ?? ""),
+    sellerSkuId: variantProfile.sellerSkuId,
     sourceUrl: fixText(result.url),
     image: fixText(result.mediaUrls?.[0] ?? ""),
     gallery: (result.mediaUrls ?? []).map((url) => fixText(url)).filter(Boolean),
@@ -255,26 +316,11 @@ function normalizeListingProduct(result, category) {
       promoReference: promoPrice,
     },
     stock: true,
-    specifications: [
-      ...(result.measurements?.format
-        ? [
-            {
-              id: "presentacion",
-              name: "Presentación",
-              value: fixText(result.measurements.format),
-            },
-          ]
-        : []),
-      ...(result.measurements?.limit
-        ? [
-            {
-              id: "limite",
-              name: "Límite",
-              value: fixText(result.measurements.limit),
-            },
-          ]
-        : []),
-    ],
+    specifications,
+    variantType: variantProfile.variantType,
+    variantLabel: variantProfile.variantLabel,
+    requiresVariantSelection: variantProfile.requiresVariantSelection,
+    variantOptions: variantProfile.variantOptions,
   };
 }
 

@@ -64,6 +64,9 @@ $currentAdmin = null;
 $orders = [];
 $users = [];
 $revenue = 0.0;
+$selectedOrder = null;
+$selectedUser = null;
+$statusCatalog = order_status_catalog();
 
 $adminSessionId = (string) ($_SESSION['plaza_admin_id'] ?? '');
 if ($adminSessionId !== '') {
@@ -73,17 +76,65 @@ if ($adminSessionId !== '') {
     }
 }
 
+if ($currentAdmin && $_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = (string) ($_POST['action'] ?? '');
+
+    if ($action === 'update-order-status') {
+        $orderId = normalize_text((string) ($_POST['orderId'] ?? ''));
+        $nextStatus = normalize_text((string) ($_POST['status'] ?? ''));
+        $note = normalize_text((string) ($_POST['note'] ?? ''));
+
+        $updated = update_order_status($orderId, $nextStatus, [
+            'author' => (string) ($currentAdmin['email'] ?? 'admin'),
+            'note' => $note,
+        ]);
+
+        if (!$updated) {
+            $errorMessage = 'No se pudo actualizar el estado del pedido.';
+        } else {
+            $successMessage = 'Estado del pedido actualizado.';
+        }
+    }
+}
+
 if ($currentAdmin) {
     $orders = list_all_orders();
     $users = list_public_users();
     foreach ($orders as $order) {
         $revenue += (float) ($order['total'] ?? 0);
     }
+
+    $selectedOrderId = normalize_text((string) ($_GET['order'] ?? $_POST['orderId'] ?? ''));
+    $selectedUserId = normalize_text((string) ($_GET['user'] ?? ''));
+
+    if ($selectedOrderId !== '') {
+        $selectedOrder = find_order_by_id($selectedOrderId);
+    }
+
+    if ($selectedUserId !== '') {
+        $selectedUser = find_user_by_id($selectedUserId);
+    }
+
+    if (!$selectedUser && is_array($selectedOrder)) {
+        $accountUserId = normalize_text((string) ($selectedOrder['account']['id'] ?? ''));
+        $customerEmail = normalize_email((string) ($selectedOrder['customer']['email'] ?? ''));
+
+        if ($accountUserId !== '') {
+            $selectedUser = find_user_by_id($accountUserId);
+        } elseif ($customerEmail !== '') {
+            $selectedUser = find_user_by_email($customerEmail);
+        }
+    }
 }
 
 function esc(string $value): string
 {
     return htmlspecialchars($value, ENT_QUOTES, 'UTF-8');
+}
+
+function status_class(string $value): string
+{
+    return 'status-badge status-badge--' . preg_replace('/[^a-z0-9\-]+/i', '-', strtolower($value));
 }
 ?><!doctype html>
 <html lang="es">
@@ -217,6 +268,9 @@ function esc(string $value): string
                           <strong>S/ <?php echo number_format((float) ($order['total'] ?? 0), 2, '.', ','); ?></strong>
                           <p class="muted"><?php echo esc((string) ($order['statusLabel'] ?? 'Pendiente')); ?></p>
                         </div>
+                        <div class="admin-card-actions">
+                          <a class="button button--ghost button--compact" href="./?order=<?php echo urlencode((string) ($order['orderId'] ?? '')); ?>">Ver detalle</a>
+                        </div>
                       </li>
                     <?php endforeach; ?>
                   <?php endif; ?>
@@ -244,10 +298,158 @@ function esc(string $value): string
                           <strong><?php echo esc((string) ($user['district'] ?? 'Sin distrito')); ?></strong>
                           <p class="muted"><?php echo esc((string) ($user['createdAt'] ?? '')); ?></p>
                         </div>
+                        <div class="admin-card-actions">
+                          <a class="button button--ghost button--compact" href="./?user=<?php echo urlencode((string) ($user['id'] ?? '')); ?>">Ver cliente</a>
+                        </div>
                       </li>
                     <?php endforeach; ?>
                   <?php endif; ?>
                 </ul>
+              </section>
+            </div>
+
+            <div class="admin-data-grid">
+              <section class="panel-card">
+                <div class="section-heading">
+                  <div>
+                    <p class="eyebrow">Detalle de pedido</p>
+                    <h3><?php echo $selectedOrder ? esc((string) ($selectedOrder['orderId'] ?? 'Pedido')) : 'Selecciona un pedido'; ?></h3>
+                  </div>
+                  <?php if ($selectedOrder): ?>
+                    <span class="<?php echo esc(status_class((string) ($selectedOrder['status'] ?? 'pending_payment_review'))); ?>">
+                      <?php echo esc((string) ($selectedOrder['statusLabel'] ?? 'Pendiente')); ?>
+                    </span>
+                  <?php endif; ?>
+                </div>
+
+                <?php if (!$selectedOrder): ?>
+                  <p class="checkout-empty">Elige un pedido de la lista para revisar cliente, items y estado.</p>
+                <?php else: ?>
+                  <div class="detail-grid">
+                    <div class="detail-stack">
+                      <div class="detail-card">
+                        <p class="eyebrow">Cliente</p>
+                        <ul class="meta-list">
+                          <li><strong>Nombre:</strong> <?php echo esc((string) ($selectedOrder['customer']['fullName'] ?? '')); ?></li>
+                          <li><strong>Correo:</strong> <?php echo esc((string) ($selectedOrder['customer']['email'] ?? '')); ?></li>
+                          <li><strong>Telefono:</strong> <?php echo esc((string) ($selectedOrder['customer']['phone'] ?? '')); ?></li>
+                          <li><strong>Zona:</strong> <?php echo esc((string) ($selectedOrder['customer']['district'] ?? '')); ?></li>
+                          <li><strong>Direccion:</strong> <?php echo esc(trim(((string) ($selectedOrder['customer']['addressLine1'] ?? '')) . ' ' . ((string) ($selectedOrder['customer']['addressLine2'] ?? '')))); ?></li>
+                          <li><strong>Referencia:</strong> <?php echo esc((string) ($selectedOrder['customer']['reference'] ?? '')); ?></li>
+                        </ul>
+                      </div>
+
+                      <div class="detail-card">
+                        <p class="eyebrow">Cobro</p>
+                        <ul class="meta-list">
+                          <li><strong>Metodo:</strong> <?php echo esc((string) ($selectedOrder['customer']['paymentMethod'] ?? '')); ?></li>
+                          <li><strong>Subtotal:</strong> S/ <?php echo number_format((float) ($selectedOrder['subtotal'] ?? 0), 2, '.', ','); ?></li>
+                          <li><strong>Delivery:</strong> S/ <?php echo number_format((float) ($selectedOrder['deliveryFee'] ?? 0), 2, '.', ','); ?></li>
+                          <li><strong>Total:</strong> S/ <?php echo number_format((float) ($selectedOrder['total'] ?? 0), 2, '.', ','); ?></li>
+                        </ul>
+                        <?php if (((string) ($selectedOrder['customer']['notes'] ?? '')) !== ''): ?>
+                          <p class="muted"><?php echo esc((string) $selectedOrder['customer']['notes']); ?></p>
+                        <?php endif; ?>
+                      </div>
+                    </div>
+
+                    <div class="detail-stack">
+                      <form class="stack-form admin-inline-form" method="post" action="./index.php?order=<?php echo urlencode((string) ($selectedOrder['orderId'] ?? '')); ?><?php echo $selectedUser ? '&user=' . urlencode((string) ($selectedUser['id'] ?? '')) : ''; ?>">
+                        <input type="hidden" name="action" value="update-order-status" />
+                        <input type="hidden" name="orderId" value="<?php echo esc((string) ($selectedOrder['orderId'] ?? '')); ?>" />
+                        <label>
+                          Estado
+                          <select name="status" required>
+                            <?php foreach ($statusCatalog as $code => $label): ?>
+                              <option value="<?php echo esc($code); ?>" <?php echo (($selectedOrder['status'] ?? '') === $code) ? 'selected' : ''; ?>>
+                                <?php echo esc($label); ?>
+                              </option>
+                            <?php endforeach; ?>
+                          </select>
+                        </label>
+                        <label>
+                          Nota interna
+                          <textarea name="note" rows="3" placeholder="Ejemplo: pago validado, chofer asignado, cliente respondio"><?php echo esc((string) ($selectedOrder['adminNote'] ?? '')); ?></textarea>
+                        </label>
+                        <button class="button" type="submit">Guardar estado</button>
+                      </form>
+
+                      <div class="detail-card">
+                        <p class="eyebrow">Items del pedido</p>
+                        <ul class="admin-order-items">
+                          <?php foreach (($selectedOrder['items'] ?? []) as $item): ?>
+                            <li>
+                              <div>
+                                <strong><?php echo esc((string) ($item['name'] ?? 'Producto')); ?></strong>
+                                <?php if (((string) ($item['variantLabel'] ?? '')) !== ''): ?>
+                                  <p class="muted"><?php echo esc((string) $item['variantLabel']); ?></p>
+                                <?php endif; ?>
+                              </div>
+                              <div>
+                                <strong>x<?php echo (int) ($item['quantity'] ?? 1); ?></strong>
+                                <p class="muted">S/ <?php echo number_format((float) ($item['price'] ?? 0), 2, '.', ','); ?></p>
+                              </div>
+                            </li>
+                          <?php endforeach; ?>
+                        </ul>
+                      </div>
+
+                      <?php if (!empty($selectedOrder['adminHistory']) && is_array($selectedOrder['adminHistory'])): ?>
+                        <div class="detail-card">
+                          <p class="eyebrow">Historial admin</p>
+                          <ul class="admin-history">
+                            <?php foreach (array_reverse($selectedOrder['adminHistory']) as $entry): ?>
+                              <li>
+                                <strong><?php echo esc((string) ($entry['statusLabel'] ?? 'Cambio')); ?></strong>
+                                <p class="muted"><?php echo esc((string) ($entry['changedAt'] ?? '')); ?> | <?php echo esc((string) ($entry['author'] ?? '')); ?></p>
+                                <?php if (((string) ($entry['note'] ?? '')) !== ''): ?>
+                                  <p class="muted"><?php echo esc((string) $entry['note']); ?></p>
+                                <?php endif; ?>
+                              </li>
+                            <?php endforeach; ?>
+                          </ul>
+                        </div>
+                      <?php endif; ?>
+                    </div>
+                  </div>
+                <?php endif; ?>
+              </section>
+
+              <section class="panel-card">
+                <div class="section-heading">
+                  <div>
+                    <p class="eyebrow">Detalle de cliente</p>
+                    <h3><?php echo $selectedUser ? esc((string) ($selectedUser['fullName'] ?? 'Cliente')) : 'Selecciona un cliente'; ?></h3>
+                  </div>
+                </div>
+
+                <?php if (!$selectedUser): ?>
+                  <p class="checkout-empty">Elige un cliente o abre un pedido para autocompletar sus datos guardados.</p>
+                <?php else: ?>
+                  <div class="detail-stack">
+                    <div class="detail-card">
+                      <p class="eyebrow">Perfil</p>
+                      <ul class="meta-list">
+                        <li><strong>Correo:</strong> <?php echo esc((string) ($selectedUser['email'] ?? '')); ?></li>
+                        <li><strong>Telefono:</strong> <?php echo esc((string) ($selectedUser['profile']['phone'] ?? '')); ?></li>
+                        <li><strong>Distrito:</strong> <?php echo esc((string) ($selectedUser['profile']['district'] ?? '')); ?></li>
+                        <li><strong>Direccion:</strong> <?php echo esc(trim(((string) ($selectedUser['profile']['addressLine1'] ?? '')) . ' ' . ((string) ($selectedUser['profile']['addressLine2'] ?? '')))); ?></li>
+                        <li><strong>Referencia:</strong> <?php echo esc((string) ($selectedUser['profile']['reference'] ?? '')); ?></li>
+                        <li><strong>Alta:</strong> <?php echo esc((string) ($selectedUser['createdAt'] ?? '')); ?></li>
+                      </ul>
+                    </div>
+
+                    <div class="detail-card">
+                      <p class="eyebrow">Atajos</p>
+                      <div class="admin-card-actions">
+                        <?php if (((string) ($selectedUser['profile']['phone'] ?? '')) !== ''): ?>
+                          <a class="button button--ghost button--compact" href="https://wa.me/<?php echo preg_replace('/\D+/', '', (string) ($selectedUser['profile']['phone'] ?? '')); ?>">WhatsApp</a>
+                        <?php endif; ?>
+                        <a class="button button--ghost button--compact" href="mailto:<?php echo esc((string) ($selectedUser['email'] ?? '')); ?>">Correo</a>
+                      </div>
+                    </div>
+                  </div>
+                <?php endif; ?>
               </section>
             </div>
           </section>

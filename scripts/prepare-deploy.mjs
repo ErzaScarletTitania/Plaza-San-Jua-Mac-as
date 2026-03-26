@@ -111,6 +111,10 @@ function productCardMarkup(product, prefix = "../") {
   const compare = product.price.compareAt
     ? `<span>${money.format(product.price.compareAt)}</span>`
     : "";
+  const variantText = product.variantLabel || (product.requiresVariantSelection ? "Requiere talla" : "");
+  const variantLabel = variantText
+    ? `<p class="product-card__variant">${escapeHtml(variantText)}</p>`
+    : "";
 
   return `
     <article class="product-card">
@@ -121,6 +125,7 @@ function productCardMarkup(product, prefix = "../") {
         <p class="product-card__category">${escapeHtml(product.categoryName)}</p>
         <h3>${escapeHtml(product.name)}</h3>
         <p class="product-card__brand">${escapeHtml(product.brand)}</p>
+        ${variantLabel}
         <div class="price-block">
           <strong>${money.format(product.price.current)}</strong>
           ${compare}
@@ -134,6 +139,10 @@ function productCardMarkup(product, prefix = "../") {
             data-product-name="${escapeHtml(cart.productName)}"
             data-product-image="${escapeHtml(cart.productImage)}"
             data-product-price="${escapeHtml(cart.productPrice)}"
+            data-product-variant-id="${escapeHtml(product.variantId ?? "")}"
+            data-product-variant-label="${escapeHtml(product.variantLabel ?? "")}"
+            data-product-variant-type="${escapeHtml(product.variantType ?? "default")}"
+            data-product-requires-variant="${product.requiresVariantSelection ? "1" : "0"}"
           >
             Agregar
           </button>
@@ -376,6 +385,10 @@ function productPageHtml(product) {
     ? `<span>${money.format(product.price.compareAt)}</span>`
     : "";
   const cart = cartDataset(product);
+  const variantText = product.variantLabel || (product.requiresVariantSelection ? "Requiere talla" : "");
+  const variantLabel = variantText
+    ? `<p class="product-card__variant">${escapeHtml(variantText)}</p>`
+    : "";
   return pageLayout({
     prefix: "../../",
     title: `${product.name} | ${brand.name}`,
@@ -410,6 +423,7 @@ function productPageHtml(product) {
               <p class="eyebrow">${escapeHtml(product.categoryName)}</p>
               <h1>${escapeHtml(product.name)}</h1>
               <p class="product-card__brand">${escapeHtml(product.brand)}</p>
+              ${variantLabel}
               <div class="price-block price-block--large">
                 <strong>${money.format(product.price.current)}</strong>
                 ${compare}
@@ -425,6 +439,10 @@ function productPageHtml(product) {
                   data-product-name="${escapeHtml(cart.productName)}"
                   data-product-image="${escapeHtml(cart.productImage)}"
                   data-product-price="${escapeHtml(cart.productPrice)}"
+                  data-product-variant-id="${escapeHtml(product.variantId ?? "")}"
+                  data-product-variant-label="${escapeHtml(product.variantLabel ?? "")}"
+                  data-product-variant-type="${escapeHtml(product.variantType ?? "default")}"
+                  data-product-requires-variant="${product.requiresVariantSelection ? "1" : "0"}"
                 >
                   Agregar al carrito
                 </button>
@@ -563,6 +581,11 @@ async function main() {
       categoryName: product.categoryName,
       categorySlug: product.categorySlug,
       url: product.url,
+      variantId: product.variantId ?? "",
+      variantType: product.variantType ?? "default",
+      variantLabel: product.variantLabel ?? "",
+      requiresVariantSelection: Boolean(product.requiresVariantSelection),
+      variantOptions: product.variantOptions ?? [],
     })),
   };
 

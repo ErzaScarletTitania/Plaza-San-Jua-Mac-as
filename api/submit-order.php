@@ -50,6 +50,9 @@ foreach ($items as $item) {
 
     $normalizedItems[] = [
         'id' => normalize_text((string) ($item['id'] ?? '')),
+        'variantId' => normalize_text((string) ($item['variantId'] ?? '')),
+        'variantLabel' => normalize_text((string) ($item['variantLabel'] ?? '')),
+        'variantType' => normalize_text((string) ($item['variantType'] ?? '')),
         'name' => $name,
         'image' => normalize_text((string) ($item['image'] ?? '')),
         'price' => round($price, 2),

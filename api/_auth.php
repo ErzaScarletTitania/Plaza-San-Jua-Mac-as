@@ -891,6 +891,81 @@ function list_all_orders(): array
     return $orders;
 }
 
+function order_status_catalog(): array
+{
+    return [
+        'pending_payment_review' => 'Pendiente de validacion de pago',
+        'payment_confirmed' => 'Pago confirmado',
+        'preparing' => 'Preparando pedido',
+        'out_for_delivery' => 'En camino',
+        'delivered' => 'Entregado',
+        'cancelled' => 'Cancelado',
+    ];
+}
+
+function find_order_by_id(string $orderId): ?array
+{
+    $normalizedOrderId = normalize_text($orderId);
+    if ($normalizedOrderId === '') {
+        return null;
+    }
+
+    $target = storage_path('orders', $normalizedOrderId . '.json');
+    if (is_file($target)) {
+        $order = read_json_file($target);
+        return $order === [] ? null : $order;
+    }
+
+    foreach (list_all_orders() as $order) {
+        if (($order['orderId'] ?? '') === $normalizedOrderId) {
+            return $order;
+        }
+    }
+
+    return null;
+}
+
+function update_order_status(string $orderId, string $statusCode, array $meta = []): ?array
+{
+    $order = find_order_by_id($orderId);
+    if (!$order) {
+        return null;
+    }
+
+    $catalog = order_status_catalog();
+    $normalizedStatus = normalize_text($statusCode);
+    if (!isset($catalog[$normalizedStatus])) {
+        return null;
+    }
+
+    $author = normalize_text((string) ($meta['author'] ?? ''));
+    $note = normalize_text((string) ($meta['note'] ?? ''));
+    $history = $order['adminHistory'] ?? [];
+    if (!is_array($history)) {
+        $history = [];
+    }
+
+    $history[] = [
+        'changedAt' => date(DATE_ATOM),
+        'status' => $normalizedStatus,
+        'statusLabel' => $catalog[$normalizedStatus],
+        'author' => $author,
+        'note' => $note,
+    ];
+
+    $order['status'] = $normalizedStatus;
+    $order['statusLabel'] = $catalog[$normalizedStatus];
+    $order['adminHistory'] = $history;
+    $order['reviewedAt'] = date(DATE_ATOM);
+    $order['reviewedBy'] = $author;
+    if ($note !== '') {
+        $order['adminNote'] = $note;
+    }
+
+    persist_order($order);
+    return $order;
+}
+
 function list_public_users(): array
 {
     $dbUsers = db_public_users_local();
