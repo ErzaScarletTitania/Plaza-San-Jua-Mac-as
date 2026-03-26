@@ -122,11 +122,30 @@ function productWhatsappHref(product) {
   return `https://wa.me/${brand.whatsapp}?text=${message}`;
 }
 
-function orderWhatsappHref(orderId, customerName) {
+function orderWhatsappHref(orderId, customerName, paymentMethod = "") {
   const message = encodeURIComponent(
-    `Hola, soy ${customerName || "cliente"}. Ya registré el pedido ${orderId} en Plaza San Juan Macias y quiero enviar el comprobante / dar seguimiento.`,
+    `Hola, soy ${customerName || "cliente"}. Ya registré el pedido ${orderId} en Plaza San Juan Macias${paymentMethod ? ` con ${paymentMethod}` : ""} y quiero enviar el comprobante / dar seguimiento.`,
   );
   return `https://wa.me/${brand.whatsapp}?text=${message}`;
+}
+
+function paymentMethodGuidance(paymentMethod) {
+  switch (repairText(paymentMethod)) {
+    case "Yape":
+      return "Paga con Yape y luego envia la captura o constancia por WhatsApp para validar tu pedido.";
+    case "BCP":
+      return "Haz la transferencia a BCP y comparte el comprobante por WhatsApp o en notas del pedido.";
+    case "PayPal":
+      return "Paga al correo de PayPal y luego envianos la confirmacion para validar el pedido.";
+    case "Binance USDT BEP20":
+      return "Transfiere al wallet BEP20 y comparte el hash o captura para validar el pago.";
+    case "Tarjeta credito/debito":
+      return "Despues de registrar el pedido te enviaremos un link de cobro seguro para pagar con tarjeta.";
+    case "Google Pay":
+      return "Despues de registrar el pedido te enviaremos un link de cobro compatible para completar con Google Pay.";
+    default:
+      return "Elige un metodo para ver como se coordina el pago y el comprobante.";
+  }
 }
 
 function productCardMarkup(product) {
@@ -578,8 +597,16 @@ function renderCheckout(user) {
     return;
   }
   const whatsappLink = document.querySelector("[data-order-whatsapp]");
+  const paymentMethodField = form.elements.namedItem("paymentMethod");
+  const paymentGuidanceNode = document.querySelector("[data-payment-guidance]");
 
   prefillCheckout(form, user);
+  if (paymentGuidanceNode && paymentMethodField) {
+    paymentGuidanceNode.textContent = paymentMethodGuidance(paymentMethodField.value);
+    paymentMethodField.onchange = () => {
+      paymentGuidanceNode.textContent = paymentMethodGuidance(paymentMethodField.value);
+    };
+  }
   const submitButton = form.querySelector('button[type="submit"]');
   if (submitButton) {
     submitButton.disabled = !minimumReached || !cart.length || pendingVariantItems.length > 0;
@@ -651,7 +678,11 @@ function renderCheckout(user) {
         `Pedido ${result.orderId} registrado. Ahora envía el comprobante y nosotros seguimos la jugada.`,
       );
       if (whatsappLink) {
-        whatsappLink.href = orderWhatsappHref(result.orderId, String(payload.customer.fullName || ""));
+        whatsappLink.href = orderWhatsappHref(
+          result.orderId,
+          String(payload.customer.fullName || ""),
+          String(payload.customer.paymentMethod || ""),
+        );
         whatsappLink.hidden = false;
       }
       renderCheckout(user);

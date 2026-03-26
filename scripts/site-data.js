@@ -68,8 +68,8 @@ export const heroSlides = [
   },
   {
     eyebrow: "Pago clarito",
-    title: "Yape, BCP, Binance y PayPal, bien puestos y faciles de ubicar.",
-    text: "Checkout pensado para comprobantes, seguimiento manual y una experiencia simple desde el celular.",
+    title: "Yape, BCP, Binance, PayPal, tarjeta y Google Pay, bien puestos y faciles de ubicar.",
+    text: "Checkout pensado para comprobantes, links de cobro y una experiencia simple desde el celular.",
     cta: "Ir al checkout",
     href: "./checkout/",
     image: "./assets/brand/hero-colores.svg",
@@ -84,5 +84,5 @@ export const seo = {
   catalogDescription:
     "Explora el catalogo de Plaza San Juan Macias con productos para despensa, hogar y limpieza, delivery en 200 Millas, San Juan Macias y Los Portales del Aeropuerto, Callao.",
   keywords:
-    "Plaza San Juan Macias, delivery San Juan Macias, delivery Callao, supermercado Callao, abarrotes Callao, compras online Callao, delivery hogar Callao, 200 Millas, Los Portales del Aeropuerto",
+    "Plaza San Juan Macias, delivery San Juan Macias, delivery Callao, supermercado Callao, abarrotes Callao, compras online Callao, delivery hogar Callao, 200 Millas, Los Portales del Aeropuerto, tarjeta credito debito, Google Pay",
 };

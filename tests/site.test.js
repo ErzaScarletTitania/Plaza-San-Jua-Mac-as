@@ -99,7 +99,7 @@ describe("public storefront regression coverage", () => {
     }
   });
 
-  test("checkout limits payment methods to the four approved options", () => {
+  test("checkout limits payment methods to the six approved options", () => {
     const dom = domFrom("deploy/checkout/index.html");
     const options = [...dom.window.document.querySelectorAll("option")]
       .map((node) => node.textContent.trim())
@@ -109,7 +109,8 @@ describe("public storefront regression coverage", () => {
     expect(options).toContain("BCP");
     expect(options).toContain("PayPal");
     expect(options).toContain("Binance USDT BEP20");
-    expect(options.join(" ")).not.toContain("Tarjeta");
+    expect(options).toContain("Tarjeta credito/debito");
+    expect(options).toContain("Google Pay");
     expect(options.join(" ")).not.toContain("Efectivo");
   });
 
@@ -128,10 +129,13 @@ describe("public storefront regression coverage", () => {
     expect(badgeAlts).toContain("BCP");
     expect(badgeAlts).toContain("PayPal");
     expect(badgeAlts).toContain("Binance");
+    expect(badgeAlts).toContain("Tarjeta");
+    expect(badgeAlts).toContain("Google Pay");
     expect(html).toContain("data-checkout-subtotal");
     expect(html).toContain("data-checkout-delivery");
     expect(html).toContain("data-checkout-variant-warning");
     expect(html).toContain("data-order-whatsapp");
+    expect(html).toContain("data-payment-guidance");
   });
 
   test("account and profile keep login, social buttons and delivery fields", () => {
@@ -275,6 +279,8 @@ describe("seo and runtime packaging regressions", () => {
       "deploy/assets/payment/bcp-badge.svg",
       "deploy/assets/payment/paypal-badge.svg",
       "deploy/assets/payment/binance-badge.svg",
+      "deploy/assets/payment/card-badge.svg",
+      "deploy/assets/payment/google-pay-badge.svg",
       "deploy/assets/payment/yape-qr.jpeg",
     ];
 
@@ -559,6 +565,8 @@ describe("backend and account utilities", () => {
   test("submit-order backend persists delivery fee totals and variant metadata", () => {
     const endpoint = read("api/submit-order.php");
 
+    expect(endpoint).toContain("'Tarjeta credito/debito'");
+    expect(endpoint).toContain("'Google Pay'");
     expect(endpoint).toContain("$deliveryFee = 5.0;");
     expect(endpoint).toContain("'variantId' => normalize_text((string) ($item['variantId'] ?? ''))");
     expect(endpoint).toContain("'variantLabel' => normalize_text((string) ($item['variantLabel'] ?? ''))");
@@ -1116,9 +1124,10 @@ describe("frontend runtime regressions", () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       const whatsappLink = dom.window.document.querySelector("[data-order-whatsapp]");
-      expect(whatsappLink.hidden).toBe(false);
+    expect(whatsappLink.hidden).toBe(false);
       expect(whatsappLink.href).toContain("wa.me/51944537419");
       expect(decodeURIComponent(whatsappLink.href)).toContain("PSJM-TEST-001");
+      expect(decodeURIComponent(whatsappLink.href)).toContain("Yape");
     } finally {
       Object.assign(globalThis, previousGlobals);
       dom.window.close();

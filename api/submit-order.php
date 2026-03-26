@@ -20,7 +20,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $payload = read_payload();
 $customer = is_array($payload['customer'] ?? null) ? $payload['customer'] : [];
 $items = is_array($payload['items'] ?? null) ? $payload['items'] : [];
-$allowedPaymentMethods = ['Yape', 'BCP', 'PayPal', 'Binance USDT BEP20'];
+$allowedPaymentMethods = ['Yape', 'BCP', 'PayPal', 'Binance USDT BEP20', 'Tarjeta credito/debito', 'Google Pay'];
 $minimumOrder = 50;
 $deliveryFee = 5.0;
 

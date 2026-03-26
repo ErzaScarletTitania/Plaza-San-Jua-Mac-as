@@ -259,6 +259,8 @@ function renderFooter(prefix) {
             <img src="${prefix}assets/payment/bcp-badge.svg" alt="BCP" />
             <img src="${prefix}assets/payment/paypal-badge.svg" alt="PayPal" />
             <img src="${prefix}assets/payment/binance-badge.svg" alt="Binance" />
+            <img src="${prefix}assets/payment/card-badge.svg" alt="Tarjeta" />
+            <img src="${prefix}assets/payment/google-pay-badge.svg" alt="Google Pay" />
           </div>
         </div>
       </div>
