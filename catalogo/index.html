@@ -76,6 +76,49 @@
 
       <section class="section">
         <div class="shell">
+          <section class="panel-card catalog-toolbar">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow">Filtros de compra</p>
+                <h2>Encuentra más rápido lo que sí quieres llevar.</h2>
+              </div>
+            </div>
+            <form class="form-grid catalog-filters" action="./" method="get" data-catalog-filters>
+              <label>
+                Buscar
+                <input type="search" name="q" placeholder="Producto, marca o antojo" data-catalog-search />
+              </label>
+              <label>
+                Categoría
+                <select name="categoria" data-catalog-category-filter>
+                  <option value="">Todas</option>
+                </select>
+              </label>
+              <label>
+                Marca
+                <select name="marca" data-catalog-brand-filter>
+                  <option value="">Todas</option>
+                </select>
+              </label>
+              <label>
+                Ordenar
+                <select name="orden" data-catalog-sort>
+                  <option value="relevancia">Relevancia</option>
+                  <option value="precio-asc">Precio: menor a mayor</option>
+                  <option value="precio-desc">Precio: mayor a menor</option>
+                  <option value="nombre-asc">Nombre: A-Z</option>
+                </select>
+              </label>
+              <div class="catalog-filters__actions">
+                <button class="button" type="submit">Aplicar</button>
+                <a class="button button--ghost" href="./">Limpiar</a>
+              </div>
+            </form>
+            <p class="page-note" data-catalog-results-note>
+              Ajusta el filtro y te dejamos solo lo que sí calza con tu compra.
+            </p>
+          </section>
+
           <div class="section-heading">
             <div>
               <p class="eyebrow">Categorías destacadas</p>

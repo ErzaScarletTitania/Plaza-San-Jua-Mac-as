@@ -223,6 +223,19 @@ describe("catalog and category regressions", () => {
     expect(dom.window.document.querySelector("[data-home-featured-products]")).not.toBeNull();
     expect(dom.window.document.querySelector("[data-home-categories]")).not.toBeNull();
   });
+
+  test("catalog page exposes search, category, brand and sort discovery controls", () => {
+    const dom = domFrom("deploy/catalogo/index.html");
+    const document = dom.window.document;
+
+    expect(document.querySelector("[data-catalog-filters]")).not.toBeNull();
+    expect(document.querySelector("[data-catalog-search]")).not.toBeNull();
+    expect(document.querySelector("[data-catalog-category-filter]")).not.toBeNull();
+    expect(document.querySelector("[data-catalog-brand-filter]")).not.toBeNull();
+    expect(document.querySelector("[data-catalog-sort]")).not.toBeNull();
+    expect(document.body.textContent).toContain("Precio: menor a mayor");
+    expect(document.body.textContent).toContain("Nombre: A-Z");
+  });
 });
 
 describe("seo and runtime packaging regressions", () => {
@@ -1232,6 +1245,129 @@ describe("frontend runtime regressions", () => {
       expect(whatsappLink.href).toContain("wa.me/51944537419");
       expect(decodeURIComponent(whatsappLink.href)).toContain("PSJM-ORDER-123");
       expect(decodeURIComponent(whatsappLink.href)).toContain("Google Pay");
+    } finally {
+      Object.assign(globalThis, previousGlobals);
+      dom.window.close();
+    }
+  });
+
+  test("catalog runtime applies category, brand and sort filters", async () => {
+    const dom = new JSDOM(
+      `<!doctype html><html data-root-prefix="../"><body>
+        <span data-cart-count>0</span>
+        <div data-catalog-categories></div>
+        <p data-catalog-summary></p>
+        <p data-catalog-results-note></p>
+        <select data-catalog-category-filter></select>
+        <select data-catalog-brand-filter></select>
+        <select data-catalog-sort>
+          <option value="relevancia">Relevancia</option>
+          <option value="precio-asc">Precio: menor a mayor</option>
+          <option value="precio-desc">Precio: mayor a menor</option>
+          <option value="nombre-asc">Nombre: A-Z</option>
+        </select>
+        <input data-catalog-search />
+        <div data-catalog-grid></div>
+      </body></html>`,
+      { url: "https://example.com/catalogo/?categoria=abarrotes&marca=Marca%20A&orden=precio-desc&q=arroz" },
+    );
+
+    const previousGlobals = {
+      window: globalThis.window,
+      document: globalThis.document,
+      localStorage: globalThis.localStorage,
+      FormData: globalThis.FormData,
+      URLSearchParams: globalThis.URLSearchParams,
+      fetch: globalThis.fetch,
+    };
+
+    Object.assign(globalThis, {
+      window: dom.window,
+      document: dom.window.document,
+      localStorage: dom.window.localStorage,
+      FormData: dom.window.FormData,
+      URLSearchParams: dom.window.URLSearchParams,
+      fetch: async (url) => {
+        const href = String(url);
+
+        if (href.endsWith("api/auth/me.php")) {
+          return { ok: false, json: async () => ({ message: "Sin sesion activa." }) };
+        }
+
+        if (href.endsWith("api/admin/me.php")) {
+          return { ok: false, json: async () => ({ message: "Sin sesion admin." }) };
+        }
+
+        if (href.endsWith("data/homepage.json")) {
+          return { ok: true, json: async () => ({ categories: [], featuredProducts: [] }) };
+        }
+
+        if (href.endsWith("data/catalog-summary.json")) {
+          return {
+            ok: true,
+            json: async () => ({
+              categories: [
+                { name: "Abarrotes", slug: "abarrotes", productCount: 2 },
+                { name: "Limpieza", slug: "limpieza", productCount: 1 },
+              ],
+              products: [
+                {
+                  id: "a1",
+                  name: "Arroz Superior",
+                  image: "https://example.com/arroz-a.jpg",
+                  categoryName: "Abarrotes",
+                  categorySlug: "abarrotes",
+                  brand: "Marca A",
+                  price: { current: 11, compareAt: null },
+                },
+                {
+                  id: "a2",
+                  name: "Arroz Extra",
+                  image: "https://example.com/arroz-b.jpg",
+                  categoryName: "Abarrotes",
+                  categorySlug: "abarrotes",
+                  brand: "Marca A",
+                  price: { current: 17, compareAt: null },
+                },
+                {
+                  id: "l1",
+                  name: "Lejia Hogar",
+                  image: "https://example.com/lejia.jpg",
+                  categoryName: "Limpieza",
+                  categorySlug: "limpieza",
+                  brand: "Marca B",
+                  price: { current: 9, compareAt: null },
+                },
+              ],
+            }),
+          };
+        }
+
+        throw new Error(`Unexpected fetch: ${href}`);
+      },
+    });
+
+    try {
+      const appUrl = `${pathToFileURL(path.join(repoRoot, "scripts", "app.js")).href}?runtime-test-catalog-filters=${Date.now()}`;
+      await import(appUrl);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const grid = dom.window.document.querySelector("[data-catalog-grid]");
+      const summary = dom.window.document.querySelector("[data-catalog-summary]");
+      const note = dom.window.document.querySelector("[data-catalog-results-note]");
+      const brandFilter = dom.window.document.querySelector("[data-catalog-brand-filter]");
+      const categoryFilter = dom.window.document.querySelector("[data-catalog-category-filter]");
+      const sortFilter = dom.window.document.querySelector("[data-catalog-sort]");
+
+      expect(grid.textContent).toContain("Arroz Extra");
+      expect(grid.textContent).toContain("Arroz Superior");
+      expect(grid.textContent).not.toContain("Lejia Hogar");
+      expect(grid.textContent.indexOf("Arroz Extra")).toBeLessThan(grid.textContent.indexOf("Arroz Superior"));
+      expect(summary.textContent).toContain("2 productos listos para delivery");
+      expect(note.textContent).toContain('búsqueda "arroz"');
+      expect(categoryFilter.value).toBe("abarrotes");
+      expect(brandFilter.value).toBe("Marca A");
+      expect(sortFilter.value).toBe("precio-desc");
     } finally {
       Object.assign(globalThis, previousGlobals);
       dom.window.close();

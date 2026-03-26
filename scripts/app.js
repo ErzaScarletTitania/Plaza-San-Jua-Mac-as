@@ -428,22 +428,76 @@ async function renderCatalogPage() {
   const payload = await loadJson(sitePath("data/catalog-summary.json"));
   const categoriesNode = document.querySelector("[data-catalog-categories]");
   const summaryNode = document.querySelector("[data-catalog-summary]");
+  const resultsNoteNode = document.querySelector("[data-catalog-results-note]");
+  const categoryFilterNode = document.querySelector("[data-catalog-category-filter]");
+  const brandFilterNode = document.querySelector("[data-catalog-brand-filter]");
+  const sortNode = document.querySelector("[data-catalog-sort]");
+  const searchNode = document.querySelector("[data-catalog-search]");
   const selectedCategory = slugify(query("categoria") || "");
+  const selectedBrand = repairText(query("marca") || "").toLowerCase();
+  const selectedSort = repairText(query("orden") || "relevancia").toLowerCase();
   const search = repairText(query("q") || "").toLowerCase();
 
   if (categoriesNode) {
     categoriesNode.innerHTML = payload.categories.map(categoryCardMarkup).join("");
   }
 
+  if (categoryFilterNode) {
+    categoryFilterNode.innerHTML = [
+      '<option value="">Todas</option>',
+      ...payload.categories.map(
+        (category) =>
+          `<option value="${category.slug}" ${category.slug === selectedCategory ? "selected" : ""}>${repairText(category.name)}</option>`,
+      ),
+    ].join("");
+  }
+
+  if (searchNode) {
+    searchNode.value = repairText(query("q") || "");
+  }
+
   const filtered = payload.products.filter((product) => {
     const matchesCategory = selectedCategory ? product.categorySlug === selectedCategory : true;
+    const matchesBrand = selectedBrand ? repairText(product.brand).toLowerCase() === selectedBrand : true;
     const haystack = `${product.name} ${product.brand} ${product.categoryName}`.toLowerCase();
     const matchesSearch = search ? haystack.includes(search) : true;
-    return matchesCategory && matchesSearch;
+    return matchesCategory && matchesBrand && matchesSearch;
   });
 
+  const visibleBrands = Array.from(
+    new Set(
+      filtered
+        .map((product) => repairText(product.brand))
+        .filter(Boolean)
+        .sort((left, right) => left.localeCompare(right, "es")),
+    ),
+  );
+
+  if (brandFilterNode) {
+    brandFilterNode.innerHTML = [
+      '<option value="">Todas</option>',
+      ...visibleBrands.map(
+        (brandName) =>
+          `<option value="${brandName}" ${brandName.toLowerCase() === selectedBrand ? "selected" : ""}>${brandName}</option>`,
+      ),
+    ].join("");
+  }
+
+  if (sortNode) {
+    sortNode.value = selectedSort;
+  }
+
+  const sorted = [...filtered];
+  if (selectedSort === "precio-asc") {
+    sorted.sort((left, right) => left.price.current - right.price.current);
+  } else if (selectedSort === "precio-desc") {
+    sorted.sort((left, right) => right.price.current - left.price.current);
+  } else if (selectedSort === "nombre-asc") {
+    sorted.sort((left, right) => left.name.localeCompare(right.name, "es"));
+  }
+
   const visible =
-    !selectedCategory && !search ? filtered.slice(0, 120) : filtered;
+    !selectedCategory && !selectedBrand && !search ? sorted.slice(0, 120) : sorted;
 
   grid.innerHTML = visible.length
     ? visible.map(productCardMarkup).join("")
@@ -451,9 +505,21 @@ async function renderCatalogPage() {
 
   if (summaryNode) {
     summaryNode.textContent =
-      !selectedCategory && !search
+      !selectedCategory && !selectedBrand && !search
         ? `Mostrando ${visible.length} de ${payload.products.length} productos. Entra por categoría para navegar más rápido en ${brand.serviceArea}.`
         : `${filtered.length} productos listos para delivery en ${brand.serviceArea}.`;
+  }
+
+  if (resultsNoteNode) {
+    const activeFilters = [
+      selectedCategory ? `categoría ${selectedCategory.replaceAll("-", " ")}` : "",
+      selectedBrand ? `marca ${selectedBrand}` : "",
+      search ? `búsqueda "${search}"` : "",
+    ].filter(Boolean);
+
+    resultsNoteNode.textContent = activeFilters.length
+      ? `Filtros activos: ${activeFilters.join(", ")}. Orden actual: ${selectedSort.replace("-", " ")}.`
+      : "Ajusta el filtro y te dejamos solo lo que sí calza con tu compra.";
   }
 
   hydrateAddToCartButtons();

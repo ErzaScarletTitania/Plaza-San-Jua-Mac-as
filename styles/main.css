@@ -859,6 +859,21 @@ p {
   box-shadow: var(--shadow);
 }
 
+.catalog-toolbar {
+  margin-bottom: 24px;
+}
+
+.catalog-filters {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+}
+
+.catalog-filters__actions {
+  display: grid;
+  gap: 10px;
+  align-self: end;
+}
+
 .stack-form {
   display: grid;
   gap: 14px;
@@ -1040,7 +1055,8 @@ p {
   }
 
   .admin-layout,
-  .admin-kpi-grid {
+  .admin-kpi-grid,
+  .catalog-filters {
     grid-template-columns: 1fr;
   }
 
