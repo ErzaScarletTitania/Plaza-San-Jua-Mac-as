@@ -459,6 +459,12 @@ describe("backend and account utilities", () => {
     expect(adminPhp).toContain("replace_admin($storedAdmin)");
     expect(adminPhp).toContain("update_order_status(");
     expect(adminPhp).toContain("name=\"action\" value=\"update-order-status\"");
+    expect(adminPhp).toContain("class=\"stack-form admin-filter-form\"");
+    expect(adminPhp).toContain("name=\"status\"");
+    expect(adminPhp).toContain("name=\"q\"");
+    expect(adminPhp).toContain("WhatsApp cliente");
+    expect(adminPhp).toContain("Notificar estado por WhatsApp");
+    expect(adminPhp).toContain("function whatsapp_link(string $phone, string $message): string");
     expect(adminPhp).toContain("Detalle de pedido");
     expect(adminPhp).toContain("Detalle de cliente");
   });
@@ -1128,6 +1134,104 @@ describe("frontend runtime regressions", () => {
       expect(whatsappLink.href).toContain("wa.me/51944537419");
       expect(decodeURIComponent(whatsappLink.href)).toContain("PSJM-TEST-001");
       expect(decodeURIComponent(whatsappLink.href)).toContain("Yape");
+    } finally {
+      Object.assign(globalThis, previousGlobals);
+      dom.window.close();
+    }
+  });
+
+  test("profile order history exposes WhatsApp follow-up actions per order", async () => {
+    const dom = new JSDOM(
+      `<!doctype html><html data-root-prefix="../"><body>
+        <span data-cart-count>0</span>
+        <ul data-orders-list></ul>
+      </body></html>`,
+      { url: "https://example.com/perfil/" },
+    );
+
+    const previousGlobals = {
+      window: globalThis.window,
+      document: globalThis.document,
+      localStorage: globalThis.localStorage,
+      FormData: globalThis.FormData,
+      URLSearchParams: globalThis.URLSearchParams,
+      fetch: globalThis.fetch,
+    };
+
+    Object.assign(globalThis, {
+      window: dom.window,
+      document: dom.window.document,
+      localStorage: dom.window.localStorage,
+      FormData: dom.window.FormData,
+      URLSearchParams: dom.window.URLSearchParams,
+      fetch: async (url) => {
+        const href = String(url);
+
+        if (href.endsWith("api/auth/me.php")) {
+          return {
+            ok: false,
+            json: async () => ({ message: "Sin sesion activa." }),
+          };
+        }
+
+        if (href.endsWith("api/admin/me.php")) {
+          return {
+            ok: false,
+            json: async () => ({ message: "Sin sesion admin." }),
+          };
+        }
+
+        if (href.endsWith("data/homepage.json")) {
+          return {
+            ok: true,
+            json: async () => ({ categories: [], featuredProducts: [] }),
+          };
+        }
+
+        if (href.endsWith("data/catalog-summary.json")) {
+          return {
+            ok: true,
+            json: async () => ({ categories: [], products: [] }),
+          };
+        }
+
+        if (href.endsWith("api/orders/list.php")) {
+          return {
+            ok: true,
+            json: async () => ({
+              ok: true,
+              orders: [
+                {
+                  orderId: "PSJM-ORDER-123",
+                  savedAt: "2026-03-26T12:00:00.000Z",
+                  total: 55,
+                  statusLabel: "Pago por validar",
+                  paymentMethod: "Google Pay",
+                  customerName: "Liliet Polanco",
+                },
+              ],
+            }),
+          };
+        }
+
+        throw new Error(`Unexpected fetch: ${href}`);
+      },
+    });
+
+    try {
+      const appUrl = `${pathToFileURL(path.join(repoRoot, "scripts", "app.js")).href}?runtime-test-profile-orders=${Date.now()}`;
+      const appModule = await import(appUrl);
+      await appModule.renderOrderHistory();
+
+      const container = dom.window.document.querySelector("[data-orders-list]");
+      const whatsappLink = container.querySelector("a");
+
+      expect(container.textContent).toContain("Pago por validar | Google Pay");
+      expect(container.textContent).toContain("Seguimiento por WhatsApp");
+      expect(whatsappLink).not.toBeNull();
+      expect(whatsappLink.href).toContain("wa.me/51944537419");
+      expect(decodeURIComponent(whatsappLink.href)).toContain("PSJM-ORDER-123");
+      expect(decodeURIComponent(whatsappLink.href)).toContain("Google Pay");
     } finally {
       Object.assign(globalThis, previousGlobals);
       dom.window.close();

@@ -67,6 +67,8 @@ $revenue = 0.0;
 $selectedOrder = null;
 $selectedUser = null;
 $statusCatalog = order_status_catalog();
+$orderStatusFilter = normalize_text((string) ($_GET['status'] ?? ''));
+$searchFilter = normalize_text((string) ($_GET['q'] ?? ''));
 
 $adminSessionId = (string) ($_SESSION['plaza_admin_id'] ?? '');
 if ($adminSessionId !== '') {
@@ -125,6 +127,40 @@ if ($currentAdmin) {
             $selectedUser = find_user_by_email($customerEmail);
         }
     }
+
+    if ($orderStatusFilter !== '' && isset($statusCatalog[$orderStatusFilter])) {
+        $orders = array_values(array_filter(
+            $orders,
+            static fn (array $order): bool => (($order['status'] ?? '') === $orderStatusFilter)
+        ));
+    }
+
+    if ($searchFilter !== '') {
+        $needle = mb_strtolower($searchFilter);
+        $orders = array_values(array_filter(
+            $orders,
+            static function (array $order) use ($needle): bool {
+                $haystack = mb_strtolower(implode(' ', [
+                    (string) ($order['orderId'] ?? ''),
+                    (string) ($order['customerName'] ?? ''),
+                    (string) ($order['district'] ?? ''),
+                    (string) ($order['paymentMethod'] ?? ''),
+                ]));
+                return str_contains($haystack, $needle);
+            }
+        ));
+        $users = array_values(array_filter(
+            $users,
+            static function (array $user) use ($needle): bool {
+                $haystack = mb_strtolower(implode(' ', [
+                    (string) ($user['fullName'] ?? ''),
+                    (string) ($user['email'] ?? ''),
+                    (string) ($user['district'] ?? ''),
+                ]));
+                return str_contains($haystack, $needle);
+            }
+        ));
+    }
 }
 
 function esc(string $value): string
@@ -135,6 +171,20 @@ function esc(string $value): string
 function status_class(string $value): string
 {
     return 'status-badge status-badge--' . preg_replace('/[^a-z0-9\-]+/i', '-', strtolower($value));
+}
+
+function digits_only(string $value): string
+{
+    return preg_replace('/\D+/', '', $value) ?? '';
+}
+
+function whatsapp_link(string $phone, string $message): string
+{
+    $digits = digits_only($phone);
+    if ($digits === '') {
+        return '';
+    }
+    return 'https://wa.me/' . $digits . '?text=' . rawurlencode($message);
 }
 ?><!doctype html>
 <html lang="es">
@@ -308,6 +358,38 @@ function status_class(string $value): string
               </section>
             </div>
 
+            <section class="panel-card">
+              <form class="stack-form admin-filter-form" method="get" action="./index.php">
+                <div class="section-heading">
+                  <div>
+                    <p class="eyebrow">Filtros operativos</p>
+                    <h3>Busca por pedido, cliente o estado</h3>
+                  </div>
+                </div>
+                <div class="admin-kpi-grid">
+                  <label>
+                    Estado
+                    <select name="status">
+                      <option value="">Todos</option>
+                      <?php foreach ($statusCatalog as $code => $label): ?>
+                        <option value="<?php echo esc($code); ?>" <?php echo $orderStatusFilter === $code ? 'selected' : ''; ?>>
+                          <?php echo esc($label); ?>
+                        </option>
+                      <?php endforeach; ?>
+                    </select>
+                  </label>
+                  <label>
+                    Buscar
+                    <input type="text" name="q" value="<?php echo esc($searchFilter); ?>" placeholder="Pedido, cliente, zona o metodo" />
+                  </label>
+                  <div class="admin-card-actions">
+                    <button class="button" type="submit">Aplicar filtros</button>
+                    <a class="button button--ghost" href="./index.php">Limpiar</a>
+                  </div>
+                </div>
+              </form>
+            </section>
+
             <div class="admin-data-grid">
               <section class="panel-card">
                 <div class="section-heading">
@@ -337,6 +419,15 @@ function status_class(string $value): string
                           <li><strong>Direccion:</strong> <?php echo esc(trim(((string) ($selectedOrder['customer']['addressLine1'] ?? '')) . ' ' . ((string) ($selectedOrder['customer']['addressLine2'] ?? '')))); ?></li>
                           <li><strong>Referencia:</strong> <?php echo esc((string) ($selectedOrder['customer']['reference'] ?? '')); ?></li>
                         </ul>
+                        <div class="admin-card-actions">
+                          <?php $orderWhatsapp = whatsapp_link((string) ($selectedOrder['customer']['phone'] ?? ''), 'Hola, te escribimos de Plaza San Juan Macias por el pedido ' . (string) ($selectedOrder['orderId'] ?? '') . '.'); ?>
+                          <?php if ($orderWhatsapp !== ''): ?>
+                            <a class="button button--ghost button--compact" href="<?php echo esc($orderWhatsapp); ?>" target="_blank" rel="noreferrer">WhatsApp cliente</a>
+                          <?php endif; ?>
+                          <?php if (((string) ($selectedOrder['customer']['email'] ?? '')) !== ''): ?>
+                            <a class="button button--ghost button--compact" href="mailto:<?php echo esc((string) ($selectedOrder['customer']['email'] ?? '')); ?>">Correo cliente</a>
+                          <?php endif; ?>
+                        </div>
                       </div>
 
                       <div class="detail-card">
@@ -372,6 +463,13 @@ function status_class(string $value): string
                           <textarea name="note" rows="3" placeholder="Ejemplo: pago validado, chofer asignado, cliente respondio"><?php echo esc((string) ($selectedOrder['adminNote'] ?? '')); ?></textarea>
                         </label>
                         <button class="button" type="submit">Guardar estado</button>
+                        <?php
+                          $statusMessage = 'Hola, tu pedido ' . (string) ($selectedOrder['orderId'] ?? '') . ' ahora está en estado: ' . (string) ($selectedOrder['statusLabel'] ?? 'Pendiente') . '.';
+                          $statusWhatsapp = whatsapp_link((string) ($selectedOrder['customer']['phone'] ?? ''), $statusMessage);
+                        ?>
+                        <?php if ($statusWhatsapp !== ''): ?>
+                          <a class="button button--ghost" href="<?php echo esc($statusWhatsapp); ?>" target="_blank" rel="noreferrer">Notificar estado por WhatsApp</a>
+                        <?php endif; ?>
                       </form>
 
                       <div class="detail-card">
@@ -443,7 +541,7 @@ function status_class(string $value): string
                       <p class="eyebrow">Atajos</p>
                       <div class="admin-card-actions">
                         <?php if (((string) ($selectedUser['profile']['phone'] ?? '')) !== ''): ?>
-                          <a class="button button--ghost button--compact" href="https://wa.me/<?php echo preg_replace('/\D+/', '', (string) ($selectedUser['profile']['phone'] ?? '')); ?>">WhatsApp</a>
+                          <a class="button button--ghost button--compact" href="https://wa.me/<?php echo digits_only((string) ($selectedUser['profile']['phone'] ?? '')); ?>">WhatsApp</a>
                         <?php endif; ?>
                         <a class="button button--ghost button--compact" href="mailto:<?php echo esc((string) ($selectedUser['email'] ?? '')); ?>">Correo</a>
                       </div>

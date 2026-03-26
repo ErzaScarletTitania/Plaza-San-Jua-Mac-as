@@ -656,6 +656,15 @@ p {
   border: 1px solid var(--line);
 }
 
+.order-card {
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.order-card__actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .checkout-item img {
   width: 70px;
   height: 70px;
@@ -1101,6 +1110,10 @@ p {
     grid-template-columns: 1fr;
     flex-direction: column;
     text-align: left;
+  }
+
+  .order-card__actions {
+    justify-content: flex-start;
   }
 
   .checkout-item img {

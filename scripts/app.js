@@ -956,7 +956,17 @@ async function renderOrderHistory() {
             </div>
             <div>
               <strong>${money.format(order.total)}</strong>
-              <p class="muted">${order.statusLabel}</p>
+              <p class="muted">${order.statusLabel} | ${order.paymentMethod}</p>
+            </div>
+            <div class="order-card__actions">
+              <a
+                class="button button--ghost button--compact"
+                href="${orderWhatsappHref(order.orderId, order.customerName || 'cliente', order.paymentMethod || '')}"
+                target="_blank"
+                rel="noreferrer"
+              >
+                Seguimiento por WhatsApp
+              </a>
             </div>
           </li>
         `,
@@ -1056,3 +1066,5 @@ async function init() {
 init().catch((error) => {
   console.error(error);
 });
+
+export { renderOrderHistory };
