@@ -106,6 +106,13 @@ function relativeUrl(prefix, urlPath) {
   return `${prefix}${String(urlPath).replace(/^\/+/, "")}`;
 }
 
+function productWhatsappHref(product) {
+  const message = encodeURIComponent(
+    `Hola, quiero confirmar la talla de ${product.name} en ${brand.name}.`,
+  );
+  return `https://wa.me/${brand.whatsapp}?text=${message}`;
+}
+
 function productCardMarkup(product, prefix = "../") {
   const cart = cartDataset(product);
   const compare = product.price.compareAt
@@ -115,6 +122,35 @@ function productCardMarkup(product, prefix = "../") {
   const variantLabel = variantText
     ? `<p class="product-card__variant">${escapeHtml(variantText)}</p>`
     : "";
+  const variantOptions = Array.isArray(product.variantOptions) ? product.variantOptions : [];
+  const hasVariantOptions = product.requiresVariantSelection && variantOptions.length > 0;
+  const variantPicker = hasVariantOptions
+    ? `
+        <label class="variant-picker">
+          <span>Selecciona talla</span>
+          <select data-variant-select data-default-variant-type="${escapeHtml(product.variantType ?? "size")}">
+            <option value="">Elige una talla</option>
+            ${variantOptions
+              .map(
+                (option) =>
+                  `<option value="${escapeHtml(option.id)}" data-variant-label="${escapeHtml(option.label)}">${escapeHtml(option.label)}</option>`,
+              )
+              .join("")}
+          </select>
+        </label>
+      `
+    : product.requiresVariantSelection
+      ? `<p class="product-card__helper">Coordina la talla por WhatsApp antes de agregar este producto.</p>`
+      : "";
+  const addButtonLabel = product.requiresVariantSelection
+    ? hasVariantOptions
+      ? "Agregar con talla"
+      : "Talla por confirmar"
+    : "Agregar";
+  const addButtonDisabled = product.requiresVariantSelection && !hasVariantOptions ? "disabled" : "";
+  const secondaryAction = product.requiresVariantSelection && !hasVariantOptions
+    ? `<a class="button button--soft" href="${productWhatsappHref(product)}" target="_blank" rel="noreferrer">WhatsApp talla</a>`
+    : `<a class="button button--soft" href="${prefix}checkout/">Ir a pagar</a>`;
 
   return `
     <article class="product-card">
@@ -130,6 +166,7 @@ function productCardMarkup(product, prefix = "../") {
           <strong>${money.format(product.price.current)}</strong>
           ${compare}
         </div>
+        ${variantPicker}
         <div class="product-card__actions">
           <button
             class="button button--ghost"
@@ -143,12 +180,11 @@ function productCardMarkup(product, prefix = "../") {
             data-product-variant-label="${escapeHtml(product.variantLabel ?? "")}"
             data-product-variant-type="${escapeHtml(product.variantType ?? "default")}"
             data-product-requires-variant="${product.requiresVariantSelection ? "1" : "0"}"
+            ${addButtonDisabled}
           >
-            Agregar
+            ${addButtonLabel}
           </button>
-          <a class="button button--soft" href="${prefix}checkout/">
-            Ir a pagar
-          </a>
+          ${secondaryAction}
         </div>
       </div>
     </article>
@@ -389,6 +425,35 @@ function productPageHtml(product) {
   const variantLabel = variantText
     ? `<p class="product-card__variant">${escapeHtml(variantText)}</p>`
     : "";
+  const variantOptions = Array.isArray(product.variantOptions) ? product.variantOptions : [];
+  const hasVariantOptions = product.requiresVariantSelection && variantOptions.length > 0;
+  const variantPicker = hasVariantOptions
+    ? `
+              <label class="variant-picker">
+                <span>Selecciona talla</span>
+                <select data-variant-select data-default-variant-type="${escapeHtml(product.variantType ?? "size")}">
+                  <option value="">Elige una talla</option>
+                  ${variantOptions
+                    .map(
+                      (option) =>
+                        `<option value="${escapeHtml(option.id)}" data-variant-label="${escapeHtml(option.label)}">${escapeHtml(option.label)}</option>`,
+                    )
+                    .join("")}
+                </select>
+              </label>
+            `
+    : product.requiresVariantSelection
+      ? `<p class="product-card__helper">Coordina la talla por WhatsApp antes de agregar este producto.</p>`
+      : "";
+  const addButtonLabel = product.requiresVariantSelection
+    ? hasVariantOptions
+      ? "Agregar con talla"
+      : "Talla por confirmar"
+    : "Agregar al carrito";
+  const addButtonDisabled = product.requiresVariantSelection && !hasVariantOptions ? "disabled" : "";
+  const secondaryAction = product.requiresVariantSelection && !hasVariantOptions
+    ? `<a class="button button--ghost" href="${productWhatsappHref(product)}" target="_blank" rel="noreferrer">WhatsApp talla</a>`
+    : `<a class="button button--ghost" href="../../checkout/">Ir al checkout</a>`;
   return pageLayout({
     prefix: "../../",
     title: `${product.name} | ${brand.name}`,
@@ -430,6 +495,7 @@ function productPageHtml(product) {
               </div>
               <p class="muted">Delivery en ${brand.serviceArea} desde un pedido mínimo de S/ ${brand.minimumOrderPen.toFixed(2)}.</p>
               <p>${escapeHtml(product.longDescription)}</p>
+              ${variantPicker}
               <div class="product-actions">
                 <button
                   class="button"
@@ -443,10 +509,11 @@ function productPageHtml(product) {
                   data-product-variant-label="${escapeHtml(product.variantLabel ?? "")}"
                   data-product-variant-type="${escapeHtml(product.variantType ?? "default")}"
                   data-product-requires-variant="${product.requiresVariantSelection ? "1" : "0"}"
+                  ${addButtonDisabled}
                 >
-                  Agregar al carrito
+                  ${addButtonLabel}
                 </button>
-                <a class="button button--ghost" href="../../checkout/">Ir al checkout</a>
+                ${secondaryAction}
               </div>
               <ul class="spec-list">
                 ${product.specs

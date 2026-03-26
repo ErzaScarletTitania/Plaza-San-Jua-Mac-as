@@ -53,6 +53,7 @@ foreach ($items as $item) {
         'variantId' => normalize_text((string) ($item['variantId'] ?? '')),
         'variantLabel' => normalize_text((string) ($item['variantLabel'] ?? '')),
         'variantType' => normalize_text((string) ($item['variantType'] ?? '')),
+        'requiresVariantSelection' => (bool) ($item['requiresVariantSelection'] ?? false),
         'name' => $name,
         'image' => normalize_text((string) ($item['image'] ?? '')),
         'price' => round($price, 2),

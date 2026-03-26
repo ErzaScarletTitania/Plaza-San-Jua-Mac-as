@@ -115,6 +115,20 @@ function categoryCardMarkup(category) {
   `;
 }
 
+function productWhatsappHref(product) {
+  const message = encodeURIComponent(
+    `Hola, quiero confirmar la talla de ${repairText(product.name)} en Plaza San Juan Macias.`,
+  );
+  return `https://wa.me/${brand.whatsapp}?text=${message}`;
+}
+
+function orderWhatsappHref(orderId, customerName) {
+  const message = encodeURIComponent(
+    `Hola, soy ${customerName || "cliente"}. Ya registré el pedido ${orderId} en Plaza San Juan Macias y quiero enviar el comprobante / dar seguimiento.`,
+  );
+  return `https://wa.me/${brand.whatsapp}?text=${message}`;
+}
+
 function productCardMarkup(product) {
   const compare = product.price.compareAt
     ? `<span>${money.format(product.price.compareAt)}</span>`
@@ -123,6 +137,36 @@ function productCardMarkup(product) {
   const variantLabel = variantText
     ? `<p class="product-card__variant">${repairText(variantText)}</p>`
     : "";
+  const variantOptions = Array.isArray(product.variantOptions) ? product.variantOptions : [];
+  const hasVariantOptions = product.requiresVariantSelection && variantOptions.length > 0;
+  const variantPicker = hasVariantOptions
+    ? `
+        <label class="variant-picker">
+          <span>Selecciona talla</span>
+          <select data-variant-select data-default-variant-type="${product.variantType ?? "size"}">
+            <option value="">Elige una talla</option>
+            ${variantOptions
+              .map(
+                (option) =>
+                  `<option value="${option.id}" data-variant-label="${repairText(option.label)}">${repairText(option.label)}</option>`,
+              )
+              .join("")}
+          </select>
+        </label>
+      `
+    : product.requiresVariantSelection
+      ? `<p class="product-card__helper">Coordina la talla por WhatsApp antes de agregar este producto.</p>`
+      : "";
+  const addButtonLabel = product.requiresVariantSelection
+    ? hasVariantOptions
+      ? "Agregar con talla"
+      : "Talla por confirmar"
+    : "Agregar";
+  const addButtonDisabled = product.requiresVariantSelection && !hasVariantOptions ? "disabled" : "";
+  const secondaryAction = product.requiresVariantSelection && !hasVariantOptions
+    ? `<a class="button button--soft" href="${productWhatsappHref(product)}" target="_blank" rel="noreferrer">WhatsApp talla</a>`
+    : `<a class="button button--soft" href="${sitePath("checkout/")}">Ir a pagar</a>`;
+
   return `
     <article class="product-card">
       <div class="product-card__image">
@@ -137,6 +181,7 @@ function productCardMarkup(product) {
           <strong>${money.format(product.price.current)}</strong>
           ${compare}
         </div>
+        ${variantPicker}
         <div class="product-card__actions">
           <button
             class="button button--ghost"
@@ -150,10 +195,11 @@ function productCardMarkup(product) {
             data-product-variant-label="${repairText(product.variantLabel ?? "")}"
             data-product-variant-type="${product.variantType ?? "default"}"
             data-product-requires-variant="${product.requiresVariantSelection ? "1" : "0"}"
+            ${addButtonDisabled}
           >
-            Agregar
+            ${addButtonLabel}
           </button>
-          <a class="button button--soft" href="${sitePath("checkout/")}">Ir a pagar</a>
+          ${secondaryAction}
         </div>
       </div>
     </article>
@@ -178,6 +224,9 @@ function cartItemKey(product) {
 }
 
 function addToCart(product) {
+  if (product.requiresVariantSelection && !product.variantLabel) {
+    throw new Error("Selecciona o confirma la talla antes de agregar este producto.");
+  }
   const cart = getCart();
   const key = cartItemKey(product);
   const existing = cart.find((item) => cartItemKey(item) === key);
@@ -231,6 +280,23 @@ function syncCartCount() {
 }
 
 function hydrateAddToCartButtons() {
+  document.querySelectorAll(".product-card, .product-detail__content").forEach((card) => {
+    const select = card.querySelector("[data-variant-select]");
+    const button = card.querySelector("[data-add-to-cart]");
+    if (!select || !button) {
+      return;
+    }
+
+    button.disabled = !select.value;
+    select.onchange = () => {
+      const option = select.options[select.selectedIndex];
+      button.dataset.productVariantId = select.value;
+      button.dataset.productVariantLabel = option?.dataset.variantLabel || "";
+      button.dataset.productVariantType = select.dataset.defaultVariantType || "size";
+      button.disabled = !select.value;
+    };
+  });
+
   document.querySelectorAll("[data-add-to-cart]").forEach((button) => {
     button.onclick = () => {
       if (button.dataset.adding === "1") {
@@ -238,19 +304,27 @@ function hydrateAddToCartButtons() {
       }
       button.dataset.adding = "1";
       button.disabled = true;
-      addToCart({
-        id: button.dataset.productId,
-        name: button.dataset.productName,
-        image: button.dataset.productImage,
-        price: button.dataset.productPrice,
-        variantId: button.dataset.productVariantId,
-        variantLabel: button.dataset.productVariantLabel,
-        variantType: button.dataset.productVariantType,
-        requiresVariantSelection: button.dataset.productRequiresVariant === "1",
-      });
+      try {
+        addToCart({
+          id: button.dataset.productId,
+          name: button.dataset.productName,
+          image: button.dataset.productImage,
+          price: button.dataset.productPrice,
+          variantId: button.dataset.productVariantId,
+          variantLabel: button.dataset.productVariantLabel,
+          variantType: button.dataset.productVariantType,
+          requiresVariantSelection: button.dataset.productRequiresVariant === "1",
+        });
+      } catch (error) {
+        setStatus("[data-order-status]", error.message, "error");
+      }
       window.setTimeout(() => {
         button.dataset.adding = "0";
-        button.disabled = false;
+        const siblingSelect = button.closest(".product-card, .product-detail__content")?.querySelector("[data-variant-select]");
+        button.disabled =
+          button.dataset.productRequiresVariant === "1"
+            ? Boolean(siblingSelect) && !siblingSelect.value
+            : false;
       }, 400);
     };
   });
@@ -418,6 +492,9 @@ function renderCheckout(user) {
   const deliveryFee = cart.length ? brand.deliveryFeePen : 0;
   const total = subtotal + deliveryFee;
   const minimumReached = subtotal >= brand.minimumOrderPen;
+  const pendingVariantItems = cart.filter(
+    (item) => item.requiresVariantSelection && !repairText(item.variantLabel || ""),
+  );
 
   container.innerHTML = cart.length
     ? cart.map(checkoutItem).join("")
@@ -471,25 +548,57 @@ function renderCheckout(user) {
 
   const minimumNode = document.querySelector("[data-checkout-minimum]");
   if (minimumNode) {
-    minimumNode.textContent = minimumReached
-      ? `Pedido mínimo alcanzado: ${money.format(subtotal)} en productos.`
-      : `Te faltan ${money.format(brand.minimumOrderPen - subtotal)} para llegar al mínimo de ${money.format(brand.minimumOrderPen)}.`;
-    minimumNode.dataset.state = minimumReached ? "ok" : "error";
+    minimumNode.textContent = pendingVariantItems.length
+      ? `Antes de cerrar, define la talla de ${pendingVariantItems.length} producto(s) de vestuario o coordínala por WhatsApp.`
+      : minimumReached
+        ? `Pedido mínimo alcanzado: ${money.format(subtotal)} en productos.`
+        : `Te faltan ${money.format(brand.minimumOrderPen - subtotal)} para llegar al mínimo de ${money.format(brand.minimumOrderPen)}.`;
+    minimumNode.dataset.state = pendingVariantItems.length ? "error" : minimumReached ? "ok" : "error";
+  }
+
+  const variantWarningNode = document.querySelector("[data-checkout-variant-warning]");
+  if (variantWarningNode) {
+    if (pendingVariantItems.length) {
+      const links = pendingVariantItems
+        .map(
+          (item) =>
+            `<a href="${productWhatsappHref(item)}" target="_blank" rel="noreferrer">${repairText(item.name)}</a>`,
+        )
+        .join(", ");
+      variantWarningNode.innerHTML = `Tienes productos con talla pendiente: ${links}. Confirma la talla antes de registrar el pedido.`;
+      variantWarningNode.hidden = false;
+    } else {
+      variantWarningNode.innerHTML = "";
+      variantWarningNode.hidden = true;
+    }
   }
 
   const form = document.querySelector("[data-order-form]");
   if (!form) {
     return;
   }
+  const whatsappLink = document.querySelector("[data-order-whatsapp]");
 
   prefillCheckout(form, user);
   const submitButton = form.querySelector('button[type="submit"]');
   if (submitButton) {
-    submitButton.disabled = !minimumReached || !cart.length;
+    submitButton.disabled = !minimumReached || !cart.length || pendingVariantItems.length > 0;
   }
 
   form.onsubmit = async (event) => {
     event.preventDefault();
+
+    if (pendingVariantItems.length) {
+      setStatus(
+        "[data-order-status]",
+        "No puedes cerrar el pedido mientras haya productos con talla pendiente.",
+        "error",
+      );
+      if (whatsappLink) {
+        whatsappLink.hidden = true;
+      }
+      return;
+    }
 
     if (!minimumReached) {
       setStatus(
@@ -541,9 +650,16 @@ function renderCheckout(user) {
         "[data-order-status]",
         `Pedido ${result.orderId} registrado. Ahora envía el comprobante y nosotros seguimos la jugada.`,
       );
+      if (whatsappLink) {
+        whatsappLink.href = orderWhatsappHref(result.orderId, String(payload.customer.fullName || ""));
+        whatsappLink.hidden = false;
+      }
       renderCheckout(user);
     } catch (error) {
       setStatus("[data-order-status]", error.message, "error");
+      if (whatsappLink) {
+        whatsappLink.hidden = true;
+      }
     }
   };
 }

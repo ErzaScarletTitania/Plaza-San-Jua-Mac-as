@@ -130,6 +130,8 @@ describe("public storefront regression coverage", () => {
     expect(badgeAlts).toContain("Binance");
     expect(html).toContain("data-checkout-subtotal");
     expect(html).toContain("data-checkout-delivery");
+    expect(html).toContain("data-checkout-variant-warning");
+    expect(html).toContain("data-order-whatsapp");
   });
 
   test("account and profile keep login, social buttons and delivery fields", () => {
@@ -561,6 +563,7 @@ describe("backend and account utilities", () => {
     expect(endpoint).toContain("'variantId' => normalize_text((string) ($item['variantId'] ?? ''))");
     expect(endpoint).toContain("'variantLabel' => normalize_text((string) ($item['variantLabel'] ?? ''))");
     expect(endpoint).toContain("'variantType' => normalize_text((string) ($item['variantType'] ?? ''))");
+    expect(endpoint).toContain("'requiresVariantSelection' => (bool) ($item['requiresVariantSelection'] ?? false)");
     expect(endpoint).toContain("'subtotal' => $computedSubtotal");
     expect(endpoint).toContain("'deliveryFee' => $deliveryFee");
     expect(endpoint).toContain("'total' => $computedTotal");
@@ -746,6 +749,7 @@ describe("frontend runtime regressions", () => {
     const html = read("deploy/categorias/vestuario/index.html");
 
     expect(html).toContain("Requiere talla");
+    expect(html).toContain("WhatsApp talla");
   });
 
   test("rapid duplicate add events are throttled so one user action does not add twice", async () => {
@@ -838,6 +842,7 @@ describe("frontend runtime regressions", () => {
       `<!doctype html><html data-root-prefix="../"><body>
         <span data-cart-count>0</span>
         <p data-checkout-minimum></p>
+        <p data-checkout-variant-warning hidden></p>
         <ul data-checkout-items></ul>
         <strong data-checkout-subtotal></strong>
         <strong data-checkout-delivery></strong>
@@ -922,6 +927,198 @@ describe("frontend runtime regressions", () => {
       expect(JSON.parse(dom.window.localStorage.getItem("plaza-cart"))).toEqual([]);
       expect(totalNode.textContent).toContain("0.00");
       expect(deliveryNode.textContent).toContain("0.00");
+    } finally {
+      Object.assign(globalThis, previousGlobals);
+      dom.window.close();
+    }
+  });
+
+  test("size-sensitive products without a defined size stay blocked from add-to-cart", async () => {
+    const dom = new JSDOM(
+      `<!doctype html><html data-root-prefix="./"><body><span data-cart-count>0</span><div data-home-featured-products></div><p data-order-status></p></body></html>`,
+      { url: "https://example.com/" },
+    );
+
+    const previousGlobals = {
+      window: globalThis.window,
+      document: globalThis.document,
+      localStorage: globalThis.localStorage,
+      FormData: globalThis.FormData,
+      URLSearchParams: globalThis.URLSearchParams,
+      fetch: globalThis.fetch,
+    };
+
+    Object.assign(globalThis, {
+      window: dom.window,
+      document: dom.window.document,
+      localStorage: dom.window.localStorage,
+      FormData: dom.window.FormData,
+      URLSearchParams: dom.window.URLSearchParams,
+      fetch: async (url) => {
+        const href = String(url);
+
+        if (href.endsWith("api/auth/me.php")) {
+          return {
+            ok: false,
+            json: async () => ({ message: "Sin sesion activa." }),
+          };
+        }
+
+        if (href.endsWith("data/homepage.json")) {
+          return {
+            ok: true,
+            json: async () => ({
+              categories: [],
+              featuredProducts: [
+                {
+                  id: "vest-1",
+                  name: "Ballerina Mujer Redwood",
+                  image: "https://example.com/ballerina.jpg",
+                  categoryName: "Vestuario",
+                  brand: "Redwood",
+                  price: {
+                    current: 59.9,
+                    compareAt: null,
+                  },
+                  variantType: "size",
+                  variantId: "vest-1",
+                  variantLabel: "",
+                  requiresVariantSelection: true,
+                  variantOptions: [],
+                },
+              ],
+            }),
+          };
+        }
+
+        if (href.endsWith("data/catalog-summary.json")) {
+          return {
+            ok: true,
+            json: async () => ({
+              categories: [],
+              products: [],
+            }),
+          };
+        }
+
+        throw new Error(`Unexpected fetch: ${href}`);
+      },
+    });
+
+    try {
+      const appUrl = `${pathToFileURL(path.join(repoRoot, "scripts", "app.js")).href}?runtime-test-size-block=${Date.now()}`;
+      await import(appUrl);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const button = dom.window.document.querySelector("[data-add-to-cart]");
+
+      expect(dom.window.document.body.textContent).toContain("Coordina la talla por WhatsApp");
+      expect(button).not.toBeNull();
+      expect(button.disabled).toBe(true);
+      expect(button.textContent).toContain("Talla por confirmar");
+      expect(dom.window.localStorage.getItem("plaza-cart")).toBeNull();
+    } finally {
+      Object.assign(globalThis, previousGlobals);
+      dom.window.close();
+    }
+  });
+
+  test("successful checkout exposes a WhatsApp follow-up link with the order id", async () => {
+    const dom = new JSDOM(
+      `<!doctype html><html data-root-prefix="../"><body>
+        <span data-cart-count>0</span>
+        <p data-checkout-minimum></p>
+        <p data-checkout-variant-warning hidden></p>
+        <ul data-checkout-items></ul>
+        <strong data-checkout-subtotal></strong>
+        <strong data-checkout-delivery></strong>
+        <strong data-checkout-total></strong>
+        <form data-order-form>
+          <input name="fullName" value="Liliet Polanco" />
+          <input name="email" value="liliet.polanco.peru@gmail.com" />
+          <input name="phone" value="944537419" />
+          <input name="district" value="San Juan Macias" />
+          <input name="addressLine1" value="Mz A Lt 1" />
+          <input name="addressLine2" value="" />
+          <textarea name="reference"></textarea>
+          <select name="paymentMethod"><option value="Yape" selected>Yape</option></select>
+          <textarea name="notes"></textarea>
+          <button type="submit">Registrar</button>
+          <p data-order-status></p>
+          <a data-order-whatsapp hidden></a>
+        </form>
+      </body></html>`,
+      { url: "https://example.com/checkout/" },
+    );
+
+    dom.window.localStorage.setItem(
+      "plaza-cart",
+      JSON.stringify([
+        {
+          id: "prd-1",
+          key: "prd-1::default",
+          name: "Azucar Rubia",
+          image: "https://example.com/azucar.jpg",
+          price: 60,
+          variantId: "",
+          variantLabel: "",
+          variantType: "default",
+          requiresVariantSelection: false,
+          quantity: 1,
+        },
+      ]),
+    );
+
+    const previousGlobals = {
+      window: globalThis.window,
+      document: globalThis.document,
+      localStorage: globalThis.localStorage,
+      FormData: globalThis.FormData,
+      URLSearchParams: globalThis.URLSearchParams,
+      fetch: globalThis.fetch,
+    };
+
+    Object.assign(globalThis, {
+      window: dom.window,
+      document: dom.window.document,
+      localStorage: dom.window.localStorage,
+      FormData: dom.window.FormData,
+      URLSearchParams: dom.window.URLSearchParams,
+      fetch: async (url, options) => {
+        const href = String(url);
+
+        if (href.endsWith("api/auth/me.php")) {
+          return {
+            ok: false,
+            json: async () => ({ message: "Sin sesion activa." }),
+          };
+        }
+
+        if (href.endsWith("api/submit-order.php")) {
+          expect(options.method).toBe("POST");
+          return {
+            ok: true,
+            json: async () => ({ orderId: "PSJM-TEST-001" }),
+          };
+        }
+
+        throw new Error(`Unexpected fetch: ${href}`);
+      },
+    });
+
+    try {
+      const appUrl = `${pathToFileURL(path.join(repoRoot, "scripts", "app.js")).href}?runtime-test-whatsapp=${Date.now()}`;
+      await import(appUrl);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const form = dom.window.document.querySelector("[data-order-form]");
+      form.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const whatsappLink = dom.window.document.querySelector("[data-order-whatsapp]");
+      expect(whatsappLink.hidden).toBe(false);
+      expect(whatsappLink.href).toContain("wa.me/51944537419");
+      expect(decodeURIComponent(whatsappLink.href)).toContain("PSJM-TEST-001");
     } finally {
       Object.assign(globalThis, previousGlobals);
       dom.window.close();
