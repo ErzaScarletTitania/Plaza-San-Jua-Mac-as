@@ -225,6 +225,55 @@ function productCardMarkup(product) {
   `;
 }
 
+function promoBannerMarkup(product, index = 0) {
+  const compare = product.price.compareAt
+    ? `<span class="muted"><s>${money.format(product.price.compareAt)}</s></span>`
+    : "";
+  const themeClass = ["promo-banner--sun", "promo-banner--teal", "promo-banner--coral"][index % 3];
+  const ctaHref = product.requiresVariantSelection && !repairText(product.variantLabel || "")
+    ? productWhatsappHref(product)
+    : sitePath("checkout/");
+  const ctaLabel = product.requiresVariantSelection && !repairText(product.variantLabel || "")
+    ? "Coordinar talla"
+    : "Agregar y pagar";
+
+  return `
+    <article class="promo-banner ${themeClass}">
+      <div class="promo-banner__content">
+        <p class="eyebrow">${repairText(product.categoryName)}</p>
+        <h3>${repairText(product.name)}</h3>
+        <p class="muted">${repairText(product.brand)}. Producto movido para compra rápida en ${brand.serviceArea}.</p>
+        <div class="price-block">
+          <strong>${money.format(product.price.current)}</strong>
+          ${compare}
+        </div>
+        <div class="hero-actions">
+          <button
+            class="button"
+            type="button"
+            data-add-to-cart
+            data-product-id="${product.id}"
+            data-product-name="${repairText(product.name)}"
+            data-product-image="${product.image}"
+            data-product-price="${product.price.current}"
+            data-product-variant-id="${product.variantId ?? ""}"
+            data-product-variant-label="${repairText(product.variantLabel ?? "")}"
+            data-product-variant-type="${product.variantType ?? "default"}"
+            data-product-requires-variant="${product.requiresVariantSelection ? "1" : "0"}"
+            ${product.requiresVariantSelection && !repairText(product.variantLabel || "") ? "disabled" : ""}
+          >
+            ${product.requiresVariantSelection && !repairText(product.variantLabel || "") ? "Talla por confirmar" : "Agregar"}
+          </button>
+          <a class="button button--ghost" href="${ctaHref}" ${ctaHref.startsWith("https://wa.me/") ? 'target="_blank" rel="noreferrer"' : ""}>${ctaLabel}</a>
+        </div>
+      </div>
+      <div class="promo-banner__media">
+        <img src="${product.image}" alt="${repairText(product.name)}" loading="lazy" />
+      </div>
+    </article>
+  `;
+}
+
 function getCart() {
   try {
     return JSON.parse(localStorage.getItem("plaza-cart") ?? "[]");
@@ -402,7 +451,8 @@ function setStatus(selector, message, state = "ok") {
 async function renderHomePage() {
   const categoriesNode = document.querySelector("[data-home-categories]");
   const productsNode = document.querySelector("[data-home-featured-products]");
-  if (!categoriesNode && !productsNode) {
+  const promoBannersNode = document.querySelector("[data-home-promo-banners]");
+  if (!categoriesNode && !productsNode && !promoBannersNode) {
     return;
   }
 
@@ -414,6 +464,13 @@ async function renderHomePage() {
 
   if (productsNode) {
     productsNode.innerHTML = payload.featuredProducts.map(productCardMarkup).join("");
+  }
+
+  if (promoBannersNode) {
+    promoBannersNode.innerHTML = payload.featuredProducts
+      .slice(0, 3)
+      .map((product, index) => promoBannerMarkup(product, index))
+      .join("");
   }
 
   hydrateAddToCartButtons();

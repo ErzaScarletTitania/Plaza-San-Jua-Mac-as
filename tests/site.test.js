@@ -222,6 +222,7 @@ describe("catalog and category regressions", () => {
     expect(summary.featuredProducts.length).toBeGreaterThan(3);
     expect(dom.window.document.querySelector("[data-home-featured-products]")).not.toBeNull();
     expect(dom.window.document.querySelector("[data-home-categories]")).not.toBeNull();
+    expect(dom.window.document.querySelector("[data-home-promo-banners]")).not.toBeNull();
   });
 
   test("catalog page exposes search, category, brand and sort discovery controls", () => {
@@ -1368,6 +1369,103 @@ describe("frontend runtime regressions", () => {
       expect(categoryFilter.value).toBe("abarrotes");
       expect(brandFilter.value).toBe("Marca A");
       expect(sortFilter.value).toBe("precio-desc");
+    } finally {
+      Object.assign(globalThis, previousGlobals);
+      dom.window.close();
+    }
+  });
+
+  test("homepage renders promoted product banners with images and commerce CTAs", async () => {
+    const dom = new JSDOM(
+      `<!doctype html><html data-root-prefix="./"><body>
+        <span data-cart-count>0</span>
+        <div data-home-categories></div>
+        <div data-home-featured-products></div>
+        <div data-home-promo-banners></div>
+      </body></html>`,
+      { url: "https://example.com/" },
+    );
+
+    const previousGlobals = {
+      window: globalThis.window,
+      document: globalThis.document,
+      localStorage: globalThis.localStorage,
+      FormData: globalThis.FormData,
+      URLSearchParams: globalThis.URLSearchParams,
+      fetch: globalThis.fetch,
+    };
+
+    Object.assign(globalThis, {
+      window: dom.window,
+      document: dom.window.document,
+      localStorage: dom.window.localStorage,
+      FormData: dom.window.FormData,
+      URLSearchParams: dom.window.URLSearchParams,
+      fetch: async (url) => {
+        const href = String(url);
+
+        if (href.endsWith("api/auth/me.php")) {
+          return { ok: false, json: async () => ({ message: "Sin sesion activa." }) };
+        }
+
+        if (href.endsWith("api/admin/me.php")) {
+          return { ok: false, json: async () => ({ message: "Sin sesion admin." }) };
+        }
+
+        if (href.endsWith("data/homepage.json")) {
+          return {
+            ok: true,
+            json: async () => ({
+              categories: [],
+              featuredProducts: [
+                {
+                  id: "p1",
+                  name: "Arroz Costeño",
+                  image: "https://example.com/arroz.jpg",
+                  categoryName: "Abarrotes",
+                  brand: "Costeño",
+                  price: { current: 7.5, compareAt: 8.2 },
+                },
+                {
+                  id: "p2",
+                  name: "Aceite Familiar",
+                  image: "https://example.com/aceite.jpg",
+                  categoryName: "Abarrotes",
+                  brand: "Primor",
+                  price: { current: 12.9, compareAt: null },
+                },
+                {
+                  id: "p3",
+                  name: "Detergente Activo",
+                  image: "https://example.com/detergente.jpg",
+                  categoryName: "Limpieza",
+                  brand: "Activo",
+                  price: { current: 9.9, compareAt: null },
+                },
+              ],
+            }),
+          };
+        }
+
+        if (href.endsWith("data/catalog-summary.json")) {
+          return { ok: true, json: async () => ({ categories: [], products: [] }) };
+        }
+
+        throw new Error(`Unexpected fetch: ${href}`);
+      },
+    });
+
+    try {
+      const appUrl = `${pathToFileURL(path.join(repoRoot, "scripts", "app.js")).href}?runtime-test-home-banners=${Date.now()}`;
+      await import(appUrl);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const banners = dom.window.document.querySelectorAll(".promo-banner");
+      expect(banners).toHaveLength(3);
+      expect(banners[0].textContent).toContain("Arroz Costeño");
+      expect(banners[0].querySelector("img").getAttribute("src")).toBe("https://example.com/arroz.jpg");
+      expect(banners[0].textContent).toContain("Agregar");
+      expect(banners[0].textContent).toContain("Agregar y pagar");
     } finally {
       Object.assign(globalThis, previousGlobals);
       dom.window.close();
