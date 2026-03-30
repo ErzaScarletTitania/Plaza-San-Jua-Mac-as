@@ -148,6 +148,269 @@ function paymentMethodGuidance(paymentMethod) {
   }
 }
 
+const deliveryMapReferencePrefix = "[Pin mapa]";
+const deliveryMapBaseLatitude = -12.0245;
+const deliveryMapBaseLongitude = -77.1125;
+const deliveryMapZones = [
+  {
+    id: "200-millas",
+    label: "200 Millas",
+    minX: 0,
+    maxX: 0.3334,
+    addressLabel: "200 Millas, Callao",
+  },
+  {
+    id: "san-juan-macias",
+    label: "San Juan Macias",
+    minX: 0.3334,
+    maxX: 0.6667,
+    addressLabel: "San Juan Macias, Callao",
+  },
+  {
+    id: "los-portales-del-aeropuerto",
+    label: "Los Portales del Aeropuerto",
+    minX: 0.6667,
+    maxX: 1,
+    addressLabel: "Los Portales del Aeropuerto, Callao",
+  },
+];
+const deliveryMapBands = [
+  {
+    maxY: 0.3334,
+    label: "franja norte",
+    addressLabel: "sector norte",
+  },
+  {
+    maxY: 0.6667,
+    label: "franja central",
+    addressLabel: "sector central",
+  },
+  {
+    maxY: 1,
+    label: "franja sur",
+    addressLabel: "sector sur",
+  },
+];
+
+function clamp(value, minimum, maximum) {
+  return Math.min(maximum, Math.max(minimum, value));
+}
+
+function formFieldValue(form, name) {
+  const field = form?.elements?.namedItem(name);
+  return field && "value" in field ? String(field.value ?? "") : "";
+}
+
+function setFormFieldValue(form, name, value) {
+  const field = form?.elements?.namedItem(name);
+  if (field && "value" in field) {
+    field.value = value;
+  }
+}
+
+function normalizedMapRatio(value) {
+  return Number(clamp(Number(value) || 0, 0, 1).toFixed(4));
+}
+
+function selectDeliveryZone(xRatio) {
+  return (
+    deliveryMapZones.find((zone) => xRatio >= zone.minX && xRatio <= zone.maxX) ??
+    deliveryMapZones[1]
+  );
+}
+
+function selectDeliveryBand(yRatio) {
+  return deliveryMapBands.find((band) => yRatio <= band.maxY) ?? deliveryMapBands[1];
+}
+
+function stripDeliveryMapReference(referenceText) {
+  return repairText(referenceText)
+    .split(/\r?\n/)
+    .map((line) => repairText(line))
+    .filter(Boolean)
+    .filter((line) => !line.startsWith(deliveryMapReferencePrefix))
+    .join("\n");
+}
+
+function formatDeliveryCoordinate(value) {
+  return Number(value).toFixed(6);
+}
+
+function managedFieldValue(field) {
+  return repairText(field?.dataset?.mapManagedValue || "");
+}
+
+function setManagedField(field, value, { force = false } = {}) {
+  if (!field) {
+    return;
+  }
+
+  const nextValue = repairText(value);
+  const currentValue = repairText(field.value);
+  const previousManagedValue = managedFieldValue(field);
+
+  if (force || currentValue === "" || currentValue === previousManagedValue) {
+    field.value = nextValue;
+    field.dataset.mapManagedValue = nextValue;
+  }
+}
+
+function clearManagedField(field) {
+  if (!field) {
+    return;
+  }
+
+  const currentValue = repairText(field.value);
+  const previousManagedValue = managedFieldValue(field);
+  if (previousManagedValue && currentValue === previousManagedValue) {
+    field.value = "";
+  }
+  delete field.dataset.mapManagedValue;
+}
+
+function buildDeliveryPinData(rawXRatio, rawYRatio) {
+  const xRatio = normalizedMapRatio(rawXRatio);
+  const yRatio = normalizedMapRatio(rawYRatio);
+  const zone = selectDeliveryZone(xRatio);
+  const band = selectDeliveryBand(yRatio);
+  const latitude = deliveryMapBaseLatitude - yRatio * 0.0145;
+  const longitude = deliveryMapBaseLongitude + xRatio * 0.028;
+  const label = `${zone.label}, ${band.label}`;
+
+  return {
+    zone: zone.label,
+    label,
+    latitude: formatDeliveryCoordinate(latitude),
+    longitude: formatDeliveryCoordinate(longitude),
+    x: String(xRatio),
+    y: String(yRatio),
+    addressLine1: `${zone.addressLabel} - ${band.addressLabel}`,
+    referenceLine: `${deliveryMapReferencePrefix} ${label}. Coordenadas aprox.: ${formatDeliveryCoordinate(latitude)}, ${formatDeliveryCoordinate(longitude)}.`,
+  };
+}
+
+function updateDeliveryMapUi(form) {
+  const map = form?.querySelector("[data-delivery-map]");
+  const pin = form?.querySelector("[data-delivery-pin]");
+  const statusNode = form?.querySelector("[data-map-selection-status]");
+  if (!map || !pin || !statusNode) {
+    return;
+  }
+
+  const zone = repairText(formFieldValue(form, "deliveryPinZone"));
+  const label = repairText(formFieldValue(form, "deliveryPinLabel"));
+  const xRatio = Number(formFieldValue(form, "deliveryPinX"));
+  const yRatio = Number(formFieldValue(form, "deliveryPinY"));
+
+  if (!zone || !Number.isFinite(xRatio) || !Number.isFinite(yRatio)) {
+    map.dataset.hasPin = "0";
+    pin.hidden = true;
+    statusNode.textContent = "Marca un punto para dejar la ubicacion aproximada del delivery.";
+    return;
+  }
+
+  map.dataset.hasPin = "1";
+  map.style.setProperty("--delivery-pin-x", `${clamp(xRatio, 0, 1) * 100}%`);
+  map.style.setProperty("--delivery-pin-y", `${clamp(yRatio, 0, 1) * 100}%`);
+  pin.hidden = false;
+  statusNode.textContent = `Pin seleccionado: ${label}.`;
+}
+
+function applyDeliveryPinToForm(form, pinData) {
+  if (!form || !pinData) {
+    return;
+  }
+
+  setFormFieldValue(form, "deliveryPinZone", pinData.zone);
+  setFormFieldValue(form, "deliveryPinLabel", pinData.label);
+  setFormFieldValue(form, "deliveryPinLatitude", pinData.latitude);
+  setFormFieldValue(form, "deliveryPinLongitude", pinData.longitude);
+  setFormFieldValue(form, "deliveryPinX", pinData.x);
+  setFormFieldValue(form, "deliveryPinY", pinData.y);
+
+  const districtField = form.elements.namedItem("district");
+  const addressField = form.elements.namedItem("addressLine1");
+  const referenceField = form.elements.namedItem("reference");
+
+  setManagedField(districtField, pinData.zone, { force: true });
+  setManagedField(addressField, pinData.addressLine1);
+  if (referenceField) {
+    const manualReference = stripDeliveryMapReference(referenceField.value);
+    const nextReference = [manualReference, pinData.referenceLine].filter(Boolean).join("\n");
+    referenceField.value = nextReference;
+    referenceField.dataset.mapManagedValue = nextReference;
+  }
+
+  updateDeliveryMapUi(form);
+}
+
+function clearDeliveryPinSelection(form) {
+  if (!form) {
+    return;
+  }
+
+  [
+    "deliveryPinZone",
+    "deliveryPinLabel",
+    "deliveryPinLatitude",
+    "deliveryPinLongitude",
+    "deliveryPinX",
+    "deliveryPinY",
+  ].forEach((name) => setFormFieldValue(form, name, ""));
+
+  clearManagedField(form.elements.namedItem("district"));
+  clearManagedField(form.elements.namedItem("addressLine1"));
+
+  const referenceField = form.elements.namedItem("reference");
+  if (referenceField) {
+    const nextReference = stripDeliveryMapReference(referenceField.value);
+    referenceField.value = nextReference;
+    referenceField.dataset.mapManagedValue = nextReference;
+  }
+
+  updateDeliveryMapUi(form);
+}
+
+function wireDeliveryMap(form) {
+  const map = form?.querySelector("[data-delivery-map]");
+  if (!form || !map) {
+    return;
+  }
+
+  if (form.dataset.deliveryMapBound !== "1") {
+    map.addEventListener("click", (event) => {
+      const rect = map.getBoundingClientRect();
+      if (!rect.width || !rect.height) {
+        return;
+      }
+
+      const xRatio = (event.clientX - rect.left) / rect.width;
+      const yRatio = (event.clientY - rect.top) / rect.height;
+      applyDeliveryPinToForm(form, buildDeliveryPinData(xRatio, yRatio));
+    });
+
+    form.querySelectorAll("[data-map-shortcut]").forEach((button) => {
+      button.addEventListener("click", () => {
+        applyDeliveryPinToForm(
+          form,
+          buildDeliveryPinData(button.dataset.mapX, button.dataset.mapY),
+        );
+      });
+    });
+
+    const clearButton = form.querySelector("[data-map-clear]");
+    if (clearButton) {
+      clearButton.addEventListener("click", () => {
+        clearDeliveryPinSelection(form);
+      });
+    }
+
+    form.dataset.deliveryMapBound = "1";
+  }
+
+  updateDeliveryMapUi(form);
+}
+
 function productCardMarkup(product) {
   const compare = product.price.compareAt
     ? `<span>${money.format(product.price.compareAt)}</span>`
@@ -724,6 +987,7 @@ function renderCheckout(user) {
   const paymentGuidanceNode = document.querySelector("[data-payment-guidance]");
 
   prefillCheckout(form, user);
+  wireDeliveryMap(form);
   if (paymentGuidanceNode && paymentMethodField) {
     paymentGuidanceNode.textContent = paymentMethodGuidance(paymentMethodField.value);
     paymentMethodField.onchange = () => {
@@ -769,6 +1033,17 @@ function renderCheckout(user) {
         addressLine1: formData.get("addressLine1"),
         addressLine2: formData.get("addressLine2"),
         reference: formData.get("reference"),
+        deliveryPin:
+          formData.get("deliveryPinZone") || formData.get("deliveryPinLabel")
+            ? {
+                zone: formData.get("deliveryPinZone"),
+                label: formData.get("deliveryPinLabel"),
+                latitude: formData.get("deliveryPinLatitude"),
+                longitude: formData.get("deliveryPinLongitude"),
+                x: formData.get("deliveryPinX"),
+                y: formData.get("deliveryPinY"),
+              }
+            : null,
         paymentMethod: formData.get("paymentMethod"),
         notes: formData.get("notes"),
       },
@@ -795,6 +1070,7 @@ function renderCheckout(user) {
       });
       setCart([]);
       form.reset();
+      clearDeliveryPinSelection(form);
       prefillCheckout(form, user);
       setStatus(
         "[data-order-status]",

@@ -132,6 +132,74 @@
                 <input type="text" name="fullName" placeholder="Nombre completo" required />
                 <input type="email" name="email" placeholder="Correo" required />
                 <input type="tel" name="phone" placeholder="Celular o WhatsApp" required />
+                <div class="delivery-map-card">
+                  <div>
+                    <p class="eyebrow">Mapa de entrega</p>
+                    <h3>Marca tu punto aproximado en la zona</h3>
+                    <p class="muted">
+                      Toca el mapa para dejar un pin. La zona, una direccion base y la referencia
+                      del pedido se completan automaticamente.
+                    </p>
+                  </div>
+                  <div class="delivery-map" data-delivery-map aria-label="Mapa local de delivery">
+                    <div class="delivery-map__area delivery-map__area--millas">200 Millas</div>
+                    <div class="delivery-map__area delivery-map__area--macias">San Juan Macias</div>
+                    <div class="delivery-map__area delivery-map__area--portales">
+                      Los Portales del Aeropuerto
+                    </div>
+                    <div class="delivery-map__rows" aria-hidden="true">
+                      <span>Norte</span>
+                      <span>Centro</span>
+                      <span>Sur</span>
+                    </div>
+                    <div class="delivery-map__pin" data-delivery-pin hidden></div>
+                  </div>
+                  <div class="delivery-map__actions">
+                    <div class="delivery-map__chips">
+                      <button
+                        class="button button--soft button--compact"
+                        type="button"
+                        data-map-shortcut
+                        data-map-x="0.16"
+                        data-map-y="0.5"
+                      >
+                        200 Millas
+                      </button>
+                      <button
+                        class="button button--soft button--compact"
+                        type="button"
+                        data-map-shortcut
+                        data-map-x="0.5"
+                        data-map-y="0.5"
+                      >
+                        San Juan Macias
+                      </button>
+                      <button
+                        class="button button--soft button--compact"
+                        type="button"
+                        data-map-shortcut
+                        data-map-x="0.84"
+                        data-map-y="0.5"
+                      >
+                        Los Portales
+                      </button>
+                    </div>
+                    <div class="delivery-map__footer">
+                      <p class="page-note" data-map-selection-status>
+                        Marca un punto para dejar la ubicacion aproximada del delivery.
+                      </p>
+                      <button class="button button--ghost button--compact" type="button" data-map-clear>
+                        Limpiar pin
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <input type="hidden" name="deliveryPinZone" />
+                <input type="hidden" name="deliveryPinLabel" />
+                <input type="hidden" name="deliveryPinLatitude" />
+                <input type="hidden" name="deliveryPinLongitude" />
+                <input type="hidden" name="deliveryPinX" />
+                <input type="hidden" name="deliveryPinY" />
                 <input
                   type="text"
                   name="district"

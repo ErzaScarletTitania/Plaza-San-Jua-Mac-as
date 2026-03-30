@@ -19,6 +19,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $payload = read_payload();
 $customer = is_array($payload['customer'] ?? null) ? $payload['customer'] : [];
+$deliveryPin = is_array($customer['deliveryPin'] ?? null) ? $customer['deliveryPin'] : [];
 $items = is_array($payload['items'] ?? null) ? $payload['items'] : [];
 $allowedPaymentMethods = ['Yape', 'BCP', 'PayPal', 'Binance USDT BEP20', 'Tarjeta credito/debito', 'Google Pay'];
 $minimumOrder = 50;
@@ -72,6 +73,20 @@ if ($computedSubtotal < $minimumOrder) {
 }
 
 $computedTotal = round($computedSubtotal + $deliveryFee, 2);
+$normalizedDeliveryPin = [];
+if (
+    normalize_text((string) ($deliveryPin['zone'] ?? '')) !== ''
+    || normalize_text((string) ($deliveryPin['label'] ?? '')) !== ''
+) {
+    $normalizedDeliveryPin = [
+        'zone' => normalize_text((string) ($deliveryPin['zone'] ?? '')),
+        'label' => normalize_text((string) ($deliveryPin['label'] ?? '')),
+        'latitude' => normalize_text((string) ($deliveryPin['latitude'] ?? '')),
+        'longitude' => normalize_text((string) ($deliveryPin['longitude'] ?? '')),
+        'x' => normalize_text((string) ($deliveryPin['x'] ?? '')),
+        'y' => normalize_text((string) ($deliveryPin['y'] ?? '')),
+    ];
+}
 
 $orderId = 'PSJM-' . date('Ymd-His') . '-' . substr(bin2hex(random_bytes(4)), 0, 8);
 $order = [
@@ -95,6 +110,7 @@ $order = [
         'reference' => normalize_text((string) ($customer['reference'] ?? '')),
         'paymentMethod' => $paymentMethod,
         'notes' => normalize_text((string) ($customer['notes'] ?? '')),
+        'deliveryPin' => $normalizedDeliveryPin,
     ],
     'account' => [
         'id' => normalize_text((string) (($payload['account']['id'] ?? '') ?: '')),

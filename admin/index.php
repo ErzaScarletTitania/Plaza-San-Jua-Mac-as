@@ -418,6 +418,16 @@ function whatsapp_link(string $phone, string $message): string
                           <li><strong>Zona:</strong> <?php echo esc((string) ($selectedOrder['customer']['district'] ?? '')); ?></li>
                           <li><strong>Direccion:</strong> <?php echo esc(trim(((string) ($selectedOrder['customer']['addressLine1'] ?? '')) . ' ' . ((string) ($selectedOrder['customer']['addressLine2'] ?? '')))); ?></li>
                           <li><strong>Referencia:</strong> <?php echo esc((string) ($selectedOrder['customer']['reference'] ?? '')); ?></li>
+                          <?php if (!empty($selectedOrder['customer']['deliveryPin']) && is_array($selectedOrder['customer']['deliveryPin'])): ?>
+                            <li>
+                              <strong>Pin del mapa:</strong>
+                              <?php echo esc((string) ($selectedOrder['customer']['deliveryPin']['label'] ?? '')); ?>
+                              <?php if (((string) ($selectedOrder['customer']['deliveryPin']['latitude'] ?? '')) !== '' && ((string) ($selectedOrder['customer']['deliveryPin']['longitude'] ?? '')) !== ''): ?>
+                                (<?php echo esc((string) ($selectedOrder['customer']['deliveryPin']['latitude'] ?? '')); ?>,
+                                <?php echo esc((string) ($selectedOrder['customer']['deliveryPin']['longitude'] ?? '')); ?>)
+                              <?php endif; ?>
+                            </li>
+                          <?php endif; ?>
                         </ul>
                         <div class="admin-card-actions">
                           <?php $orderWhatsapp = whatsapp_link((string) ($selectedOrder['customer']['phone'] ?? ''), 'Hola, te escribimos de Plaza San Juan Macias por el pedido ' . (string) ($selectedOrder['orderId'] ?? '') . '.'); ?>

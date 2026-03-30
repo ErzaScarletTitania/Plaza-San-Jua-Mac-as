@@ -136,6 +136,8 @@ describe("public storefront regression coverage", () => {
     expect(html).toContain("data-checkout-variant-warning");
     expect(html).toContain("data-order-whatsapp");
     expect(html).toContain("data-payment-guidance");
+    expect(html).toContain("data-delivery-map");
+    expect(html).toContain("data-map-selection-status");
   });
 
   test("account and profile keep login, social buttons and delivery fields", () => {
@@ -1062,6 +1064,11 @@ describe("frontend runtime regressions", () => {
         <strong data-checkout-delivery></strong>
         <strong data-checkout-total></strong>
         <form data-order-form>
+          <div data-delivery-map></div>
+          <div data-delivery-pin hidden></div>
+          <p data-map-selection-status></p>
+          <button type="button" data-map-clear></button>
+          <button type="button" data-map-shortcut data-map-x="0.5" data-map-y="0.5"></button>
           <input name="fullName" value="Liliet Polanco" />
           <input name="email" value="liliet.polanco.peru@gmail.com" />
           <input name="phone" value="944537419" />
@@ -1069,6 +1076,12 @@ describe("frontend runtime regressions", () => {
           <input name="addressLine1" value="Mz A Lt 1" />
           <input name="addressLine2" value="" />
           <textarea name="reference"></textarea>
+          <input name="deliveryPinZone" value="" />
+          <input name="deliveryPinLabel" value="" />
+          <input name="deliveryPinLatitude" value="" />
+          <input name="deliveryPinLongitude" value="" />
+          <input name="deliveryPinX" value="" />
+          <input name="deliveryPinY" value="" />
           <select name="paymentMethod"><option value="Yape" selected>Yape</option></select>
           <textarea name="notes"></textarea>
           <button type="submit">Registrar</button>
@@ -1106,6 +1119,7 @@ describe("frontend runtime regressions", () => {
       fetch: globalThis.fetch,
     };
 
+    let submittedPayload = null;
     Object.assign(globalThis, {
       window: dom.window,
       document: dom.window.document,
@@ -1124,6 +1138,7 @@ describe("frontend runtime regressions", () => {
 
         if (href.endsWith("api/submit-order.php")) {
           expect(options.method).toBe("POST");
+          submittedPayload = JSON.parse(String(options.body));
           return {
             ok: true,
             json: async () => ({ orderId: "PSJM-TEST-001" }),
@@ -1139,15 +1154,175 @@ describe("frontend runtime regressions", () => {
       await import(appUrl);
       await new Promise((resolve) => setTimeout(resolve, 0));
 
+      const map = dom.window.document.querySelector("[data-delivery-map]");
+      Object.defineProperty(map, "getBoundingClientRect", {
+        value: () => ({
+          left: 20,
+          top: 10,
+          width: 300,
+          height: 240,
+          right: 320,
+          bottom: 250,
+        }),
+      });
+      map.dispatchEvent(
+        new dom.window.MouseEvent("click", {
+          bubbles: true,
+          clientX: 210,
+          clientY: 90,
+        }),
+      );
+
       const form = dom.window.document.querySelector("[data-order-form]");
       form.dispatchEvent(new dom.window.Event("submit", { bubbles: true, cancelable: true }));
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       const whatsappLink = dom.window.document.querySelector("[data-order-whatsapp]");
-    expect(whatsappLink.hidden).toBe(false);
+      expect(whatsappLink.hidden).toBe(false);
       expect(whatsappLink.href).toContain("wa.me/51944537419");
       expect(decodeURIComponent(whatsappLink.href)).toContain("PSJM-TEST-001");
       expect(decodeURIComponent(whatsappLink.href)).toContain("Yape");
+      expect(submittedPayload.customer.deliveryPin.zone).toBe("San Juan Macias");
+      expect(submittedPayload.customer.deliveryPin.label).toContain("franja norte");
+      expect(submittedPayload.customer.reference).toContain("[Pin mapa]");
+    } finally {
+      Object.assign(globalThis, previousGlobals);
+      dom.window.close();
+    }
+  });
+
+  test("checkout map pin autocompletes delivery zone, address base and reference", async () => {
+    const dom = new JSDOM(
+      `<!doctype html><html data-root-prefix="../"><body>
+        <span data-cart-count>0</span>
+        <p data-checkout-minimum></p>
+        <p data-checkout-variant-warning hidden></p>
+        <ul data-checkout-items></ul>
+        <strong data-checkout-subtotal></strong>
+        <strong data-checkout-delivery></strong>
+        <strong data-checkout-total></strong>
+        <form data-order-form>
+          <div data-delivery-map></div>
+          <div data-delivery-pin hidden></div>
+          <p data-map-selection-status></p>
+          <button type="button" data-map-clear>Limpiar</button>
+          <button type="button" data-map-shortcut data-map-x="0.16" data-map-y="0.5">200 Millas</button>
+          <input name="fullName" value="Cliente Demo" />
+          <input name="email" value="cliente@example.com" />
+          <input name="phone" value="944537419" />
+          <input name="district" value="" />
+          <input name="addressLine1" value="" />
+          <input name="addressLine2" value="" />
+          <textarea name="reference"></textarea>
+          <input name="deliveryPinZone" value="" />
+          <input name="deliveryPinLabel" value="" />
+          <input name="deliveryPinLatitude" value="" />
+          <input name="deliveryPinLongitude" value="" />
+          <input name="deliveryPinX" value="" />
+          <input name="deliveryPinY" value="" />
+          <select name="paymentMethod"><option value="Yape" selected>Yape</option></select>
+          <textarea name="notes"></textarea>
+          <button type="submit">Registrar</button>
+          <p data-order-status></p>
+          <a data-order-whatsapp hidden></a>
+        </form>
+      </body></html>`,
+      { url: "https://example.com/checkout/" },
+    );
+
+    dom.window.localStorage.setItem(
+      "plaza-cart",
+      JSON.stringify([
+        {
+          id: "prd-2",
+          key: "prd-2::default",
+          name: "Leche Gloria",
+          image: "https://example.com/leche.jpg",
+          price: 55,
+          variantId: "",
+          variantLabel: "",
+          variantType: "default",
+          requiresVariantSelection: false,
+          quantity: 1,
+        },
+      ]),
+    );
+
+    const previousGlobals = {
+      window: globalThis.window,
+      document: globalThis.document,
+      localStorage: globalThis.localStorage,
+      FormData: globalThis.FormData,
+      URLSearchParams: globalThis.URLSearchParams,
+      fetch: globalThis.fetch,
+    };
+
+    Object.assign(globalThis, {
+      window: dom.window,
+      document: dom.window.document,
+      localStorage: dom.window.localStorage,
+      FormData: dom.window.FormData,
+      URLSearchParams: dom.window.URLSearchParams,
+      fetch: async (url) => {
+        const href = String(url);
+
+        if (href.endsWith("api/auth/me.php")) {
+          return {
+            ok: false,
+            json: async () => ({ message: "Sin sesion activa." }),
+          };
+        }
+
+        if (href.endsWith("api/admin/me.php")) {
+          return {
+            ok: false,
+            json: async () => ({ message: "Sin sesion admin." }),
+          };
+        }
+
+        throw new Error(`Unexpected fetch: ${href}`);
+      },
+    });
+
+    try {
+      const appUrl = `${pathToFileURL(path.join(repoRoot, "scripts", "app.js")).href}?runtime-test-checkout-map=${Date.now()}`;
+      await import(appUrl);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const map = dom.window.document.querySelector("[data-delivery-map]");
+      const pin = dom.window.document.querySelector("[data-delivery-pin]");
+      const status = dom.window.document.querySelector("[data-map-selection-status]");
+
+      Object.defineProperty(map, "getBoundingClientRect", {
+        value: () => ({
+          left: 0,
+          top: 0,
+          width: 300,
+          height: 240,
+          right: 300,
+          bottom: 240,
+        }),
+      });
+
+      map.dispatchEvent(
+        new dom.window.MouseEvent("click", {
+          bubbles: true,
+          clientX: 40,
+          clientY: 120,
+        }),
+      );
+
+      expect(dom.window.document.querySelector('[name="district"]').value).toBe("200 Millas");
+      expect(dom.window.document.querySelector('[name="addressLine1"]').value).toContain("200 Millas, Callao");
+      expect(dom.window.document.querySelector('[name="reference"]').value).toContain("[Pin mapa]");
+      expect(dom.window.document.querySelector('[name="deliveryPinLatitude"]').value).not.toBe("");
+      expect(dom.window.document.querySelector('[name="deliveryPinLongitude"]').value).not.toBe("");
+      expect(pin.hidden).toBe(false);
+      expect(status.textContent).toContain("200 Millas");
+
+      dom.window.document.querySelector("[data-map-clear]").click();
+      expect(dom.window.document.querySelector('[name="deliveryPinZone"]').value).toBe("");
+      expect(dom.window.document.querySelector('[name="reference"]').value).toBe("");
     } finally {
       Object.assign(globalThis, previousGlobals);
       dom.window.close();

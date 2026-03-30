@@ -1,0 +1,87 @@
+name: Deploy Staging Next
+
+on:
+  push:
+    branches:
+      - staging-next
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-staging-next
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run verification
+        run: npm run verify
+
+      - name: Upload staging-next artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: staging-next-deploy-package
+          path: deploy
+          if-no-files-found: error
+          include-hidden-files: true
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: verify
+    environment: staging
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Download staging-next artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: staging-next-deploy-package
+          path: deploy
+
+      - name: Provision admin credentials into staging-next artifact
+        env:
+          ADMIN_EMAIL: ${{ secrets.ADMIN_EMAIL }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD }}
+          ADMIN_NAME: ${{ secrets.ADMIN_NAME }}
+        run: node scripts/bootstrap-admin.mjs --target-root ./deploy
+
+      - name: Validate staging-next deploy artifact
+        run: |
+          test -f deploy/index.html
+          test -f deploy/.htaccess
+          test -f deploy/checkout/index.html
+          test -f deploy/assets/payment/yape-qr.jpeg
+          test -f deploy/storage/admin/admins.json
+
+      - name: Publish to staging-next via FTP
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          server-dir: ${{ format('{0}/staging-next/', secrets.FTP_SERVER_DIR_STAGING) }}
+          local-dir: ./deploy/
+          dangerous-clean-slate: false
