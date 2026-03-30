@@ -12,6 +12,7 @@ const repoRoot = process.cwd();
 const detailedProductsDir = path.join(repoRoot, "reference", "products");
 const categoryPagesDir = path.join(repoRoot, "reference", "category-pages");
 const outputDir = path.join(repoRoot, "data");
+const existingCatalogPath = path.join(outputDir, "catalog.json");
 const brandName = "Plaza San Juan Macías";
 
 function extractNextData(html) {
@@ -325,9 +326,14 @@ function normalizeListingProduct(result, category) {
 }
 
 async function readDetailedProducts() {
-  const files = (await fs.readdir(detailedProductsDir))
-    .filter((file) => file.endsWith(".html"))
-    .sort();
+  let files = [];
+  try {
+    files = (await fs.readdir(detailedProductsDir))
+      .filter((file) => file.endsWith(".html"))
+      .sort();
+  } catch {
+    return [];
+  }
 
   const products = [];
 
@@ -341,6 +347,15 @@ async function readDetailedProducts() {
   }
 
   return products;
+}
+
+async function readCommittedCatalogProducts() {
+  try {
+    const payload = JSON.parse(await fs.readFile(existingCatalogPath, "utf8"));
+    return Array.isArray(payload.products) ? payload.products : [];
+  } catch {
+    return [];
+  }
 }
 
 async function readListingProducts() {
@@ -438,7 +453,16 @@ function buildCategoryIndex(products) {
 async function buildCatalog() {
   const listingProducts = await readListingProducts();
   const detailedProducts = await readDetailedProducts();
-  const products = mergeProducts(listingProducts, detailedProducts);
+  let products = mergeProducts(listingProducts, detailedProducts);
+
+  if (!products.length) {
+    products = await readCommittedCatalogProducts();
+    if (products.length) {
+      console.warn(
+        "No se encontraron archivos de referencia locales. Se reutilizara data/catalog.json versionado como fallback para CI/deploy.",
+      );
+    }
+  }
 
   if (!products.length) {
     throw new Error(
